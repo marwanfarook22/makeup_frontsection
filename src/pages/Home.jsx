@@ -110,12 +110,12 @@ const ProductCard = ({ product, variant = "grid" }) => {
       {/* الضغط على الصورة ينقل لصفحة تفاصيل المنتج */}
       <Link
         to={productUrl}
-        className="relative h-52 bg-white flex items-center justify-center overflow-hidden block"
+        className="relative block aspect-[4/5] w-full overflow-hidden bg-[#FAF8F6]"
       >
         <img
           src={allImages[currentImgIndex]}
           alt={product.name}
-          className="w-full h-full object-cover transition-all duration-300 hover:scale-105"
+          className="h-full w-full object-contain p-2 transition-all duration-300 hover:scale-105 sm:p-3"
         />
 
         {isHovered && allImages.length > 1 && (

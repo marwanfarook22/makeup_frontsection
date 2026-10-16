@@ -237,6 +237,8 @@ const arabicTranslations = {
   "your profile page": "صفحة الملف الشخصي",
   "before confirming your order.": "قبل تأكيد الطلب.",
   "Language:": "اللغة:",
+  "Open menu": "فتح القائمة",
+  "Close menu": "إغلاق القائمة",
   "English": "الإنجليزية",
   "Arabic": "العربية",
 };
