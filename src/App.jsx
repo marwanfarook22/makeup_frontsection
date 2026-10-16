@@ -1,5 +1,11 @@
 import { lazy, Suspense } from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+} from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import Navbar from "./components/Navbar";
 import Login from "./pages/Login";
@@ -14,8 +20,26 @@ import MyOrders from "./pages/MyOrders";
 import { CartProvider } from "./context/CartContext";
 import { LanguageProvider } from "./context/LanguageContext";
 import { useLanguage } from "./context/LanguageState";
+import { useAuthStore } from "./store/useAuthStore";
 
 const Dashboard = lazy(() => import("./pages/Dashboard"));
+
+function RequireAuth({ children }) {
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const location = useLocation();
+
+  if (!isAuthenticated) {
+    return (
+      <Navigate
+        to="/login"
+        replace
+        state={{ from: `${location.pathname}${location.search}` }}
+      />
+    );
+  }
+
+  return children;
+}
 
 function App() {
   const { language } = useLanguage();
@@ -23,30 +47,71 @@ function App() {
   return (
     <CartProvider>
       <Router>
-        <div lang={language} dir={language === "ar" ? "rtl" : "ltr"} className="min-h-screen flex flex-col">
+        <div
+          lang={language}
+          dir={language === "ar" ? "rtl" : "ltr"}
+          className="min-h-screen flex flex-col"
+        >
           <Navbar />
 
-          <main className="flex-grow container mx-auto p-4">
+          <main className="flex-grow container mx-auto p-2 sm:p-4">
             <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/product/:idOrSlug" element={<ProductDetails />} />
-              <Route path="/cart" element={<Cart />} />
+              <Route
+                path="/"
+                element={
+                  <RequireAuth>
+                    <Home />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/product/:idOrSlug"
+                element={
+                  <RequireAuth>
+                    <ProductDetails />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/cart"
+                element={
+                  <RequireAuth>
+                    <Cart />
+                  </RequireAuth>
+                }
+              />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/orders" element={<MyOrders />} />
+              <Route
+                path="/profile"
+                element={
+                  <RequireAuth>
+                    <Profile />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/orders"
+                element={
+                  <RequireAuth>
+                    <MyOrders />
+                  </RequireAuth>
+                }
+              />
               <Route
                 path="/dashboard"
                 element={
-                  <Suspense
-                    fallback={
-                      <div className="py-20 text-center text-[#03382E]">
-                        جارٍ تحميل لوحة التحكم...
-                      </div>
-                    }
-                  >
-                    <Dashboard />
-                  </Suspense>
+                  <RequireAuth>
+                    <Suspense
+                      fallback={
+                        <div className="py-20 text-center text-[#03382E]">
+                          جارٍ تحميل لوحة التحكم...
+                        </div>
+                      }
+                    >
+                      <Dashboard />
+                    </Suspense>
+                  </RequireAuth>
                 }
               />
               <Route path="/forgot-password" element={<ForgotPassword />} />

@@ -239,7 +239,7 @@ export default function Home() {
   );
 
   return (
-    <div className="py-8 px-4 sm:px-6 lg:px-8 max-w-[1400px] mx-auto">
+    <div className="mx-auto max-w-[1400px] px-1 py-5 sm:px-6 sm:py-8 lg:px-8">
       <div className="flex flex-col md:flex-row gap-8">
         <aside className="w-full md:w-1/4 lg:w-1/5 flex-shrink-0">
           <div className="sticky top-6 space-y-6">
@@ -263,7 +263,7 @@ export default function Home() {
                 <li>
                   <button
                     onClick={() => setSelectedCategory("All")}
-                    className={`w-full text-left px-4 py-2.5 rounded-sm transition font-medium text-sm ${
+                    className={`w-full text-start px-4 py-2.5 rounded-sm transition font-medium text-sm ${
                       selectedCategory === "All"
                         ? "bg-[#03382E] text-white"
                         : "text-gray-500 hover:bg-[#F5EBE6]"
@@ -276,7 +276,7 @@ export default function Home() {
                   <li key={cat._id}>
                     <button
                       onClick={() => setSelectedCategory(cat._id)}
-                      className={`w-full text-left px-4 py-2.5 rounded-sm transition font-medium text-sm ${
+                      className={`w-full text-start px-4 py-2.5 rounded-sm transition font-medium text-sm ${
                         selectedCategory === cat._id
                           ? "bg-[#03382E] text-white"
                           : "text-gray-500 hover:bg-[#F5EBE6]"
@@ -355,7 +355,7 @@ export default function Home() {
               <span className="animate-spin h-10 w-10 border-4 border-[#03382E] border-t-transparent rounded-full"></span>
             </div>
           ) : filteredProducts.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3 xl:grid-cols-4">
               {filteredProducts.map((product) => (
                 <ProductCard
                   key={product._id}

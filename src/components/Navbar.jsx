@@ -11,45 +11,47 @@ export default function Navbar() {
 
   const handleLogout = () => {
     logout();
-    navigate("/");
+    navigate("/login", { replace: true });
   };
 
   return (
-    <nav className="bg-[#03382E] text-white shadow-sm p-4">
-      <div className="container mx-auto flex justify-between items-center">
+    <nav className="bg-[#03382E] px-3 py-3 text-white shadow-sm sm:p-4">
+      <div className="container mx-auto flex flex-wrap items-center justify-between gap-3">
         {/* Logo */}
-        <Link to="/" className="text-2xl font-bold tracking-[0.2em] text-white">
+        <Link to="/" className="shrink-0 text-xl font-bold tracking-[0.12em] text-white sm:text-2xl sm:tracking-[0.2em]">
           SheGlam
         </Link>
 
         {/* Navigation Links */}
-        <div className="flex gap-4 items-center">
-          <Link
-            to="/cart"
-            className="flex items-center gap-2 text-white/90"
-            aria-label={`${t("Shopping bag")}: ${cartCount} ${t("items")}`}
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              aria-hidden="true"
+        <div className="flex min-w-0 flex-wrap items-center justify-end gap-2 sm:gap-4">
+          {isAuthenticated && (
+            <Link
+              to="/cart"
+              className="flex items-center gap-1.5 text-sm text-white/90 sm:gap-2 sm:text-base"
+              aria-label={`${t("Shopping bag")}: ${cartCount} ${t("items")}`}
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M5 8h14l1 13H4L5 8zm4 0a3 3 0 016 0"
-              />
-            </svg>
-            <span>{t("Bag")} ({cartCount})</span>
-          </Link>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 8h14l1 13H4L5 8zm4 0a3 3 0 016 0"
+                />
+              </svg>
+              <span>{t("Bag")} ({cartCount})</span>
+            </Link>
+          )}
           <button
             type="button"
             onClick={() => setLanguage(language === "en" ? "ar" : "en")}
-            className="rounded-sm border border-white/40 px-3 py-2 text-sm font-semibold text-white hover:bg-white/10"
+            className="rounded-sm border border-white/40 px-2.5 py-1.5 text-sm font-semibold text-white hover:bg-white/10 sm:px-3 sm:py-2"
             aria-label={`${t("Language:")} ${language === "en" ? t("Arabic") : t("English")}`}
           >
             {language === "en" ? "العربية" : "English"}
@@ -63,7 +65,7 @@ export default function Navbar() {
                   className="w-8 h-8 rounded-full object-cover"
                 />
               )}
-              <span className="font-medium text-white/90">
+              <span className="hidden max-w-36 truncate font-medium text-white/90 sm:inline">
                 {t("Welcome,")} {user?.name?.split(" ")[0]}
               </span>
 
@@ -86,7 +88,7 @@ export default function Navbar() {
                     ▼
                   </span>
                 </summary>
-                <div className="absolute right-0 z-20 mt-3 min-w-40 rounded-sm border border-[#EFE6DD] bg-white py-1 text-[#1A1A1A] shadow-lg">
+                <div className="absolute end-0 z-20 mt-3 min-w-40 rounded-sm border border-[#EFE6DD] bg-white py-1 text-[#1A1A1A] shadow-lg">
                   <Link
                     to="/profile"
                     className="block px-4 py-2 text-sm hover:bg-[#F5EBE6]"
@@ -103,7 +105,7 @@ export default function Navbar() {
               </details>
               <button
                 onClick={handleLogout}
-                className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-sm transition"
+                className="rounded-sm bg-white/10 px-3 py-1.5 text-sm text-white transition hover:bg-white/20 sm:px-4 sm:py-2 sm:text-base"
               >
                 {t("Logout")}
               </button>
@@ -112,13 +114,13 @@ export default function Navbar() {
             <>
               <Link
                 to="/login"
-                className="text-white/80 hover:text-white font-medium"
+                className="text-sm font-medium text-white/80 hover:text-white sm:text-base"
               >
                 {t("Login")}
               </Link>
               <Link
                 to="/register"
-                className="bg-white text-[#03382E] hover:bg-[#F5EBE6] px-4 py-2 rounded-sm font-semibold transition"
+                className="rounded-sm bg-white px-3 py-1.5 text-sm font-semibold text-[#03382E] transition hover:bg-[#F5EBE6] sm:px-4 sm:py-2 sm:text-base"
               >
                 {t("Sign Up")}
               </Link>

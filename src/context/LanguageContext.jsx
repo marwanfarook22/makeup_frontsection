@@ -27,6 +27,7 @@ const arabicTranslations = {
   "Add to bag": "أضف إلى السلة",
   "added to bag!": "تمت إضافته إلى السلة!",
   "Login to Your Account": "سجل الدخول إلى حسابك",
+  "Sign in or create an account to continue shopping.": "سجّل الدخول أو أنشئ حساباً لمتابعة التسوق.",
   "Email Address": "البريد الإلكتروني",
   Password: "كلمة المرور",
   "Enter your email": "أدخل بريدك الإلكتروني",

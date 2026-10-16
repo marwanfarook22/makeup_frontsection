@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -10,6 +10,7 @@ import { useLanguage } from "../context/LanguageState";
 
 export default function Register() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { t } = useLanguage();
   const login = useAuthStore((state) => state.login);
   const [isLoading, setIsLoading] = useState(false);
@@ -53,7 +54,7 @@ export default function Register() {
       delete safeUser.passwordResetExpires;
       login(safeUser, token);
       toast.success(t("Account created successfully!"));
-      navigate("/");
+      navigate(location.state?.from || "/", { replace: true });
     } catch (error) {
       toast.error(
         error.response?.data?.message ||
@@ -69,8 +70,8 @@ export default function Register() {
     "w-full rounded-sm border border-[#E5E7EB] px-3 py-2.5 focus:border-[#03382E] focus:outline-none focus:ring-2 focus:ring-[#C5A368]";
 
   return (
-    <div className="flex min-h-[75vh] items-center justify-center py-10">
-      <div className="w-full max-w-md border border-[#EFE6DD] bg-white p-8 shadow-sm">
+    <div className="flex min-h-[65vh] items-center justify-center py-6 sm:min-h-[75vh] sm:py-10">
+      <div className="w-full max-w-md border border-[#EFE6DD] bg-white p-5 shadow-sm sm:p-8">
         <h1 className="mb-2 text-center text-2xl font-bold text-[#1A1A1A]">
           {t("Create Your Account")}
         </h1>
@@ -191,10 +192,11 @@ export default function Register() {
           </button>
         </form>
 
-        <p className="mt-5 text-center text-sm text-gray-500">
+        <p className="mt-5 flex flex-wrap items-center justify-center gap-x-1 text-center text-sm text-gray-500">
           {t("Already have an account?")}{" "}
           <Link
             to="/login"
+            state={location.state}
             className="font-semibold text-[#03382E] hover:text-[#C5A368] hover:underline"
           >
             {t("Log in")}

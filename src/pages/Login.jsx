@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -10,6 +10,7 @@ import { useLanguage } from "../context/LanguageState";
 
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { t } = useLanguage();
   const login = useAuthStore((state) => state.login);
   const [isLoading, setIsLoading] = useState(false);
@@ -48,7 +49,7 @@ export default function Login() {
       toast.success(t("Logged in successfully!"));
 
       // توجيه المستخدم للصفحة الرئيسية
-      navigate("/");
+      navigate(location.state?.from || "/", { replace: true });
     } catch (error) {
       // إظهار رسالة الخطأ القادمة من الباك إند أو رسالة عامة
       const errorMessage =
@@ -60,11 +61,14 @@ export default function Login() {
   };
 
   return (
-    <div className="flex justify-center items-center h-[80vh]">
-      <div className="w-full max-w-md bg-white p-8 rounded-lg shadow-md border border-gray-100">
+    <div className="flex min-h-[65vh] items-center justify-center py-6 sm:min-h-[75vh] sm:py-10">
+      <div className="w-full max-w-md rounded-lg border border-gray-100 bg-white p-5 shadow-md sm:p-8">
         <h2 className="text-2xl font-bold text-center text-[#1A1A1A] mb-6">
           {t("Login to Your Account")}
         </h2>
+        <p className="-mt-3 mb-6 text-center text-sm text-gray-500">
+          {t("Sign in or create an account to continue shopping.")}
+        </p>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {/* حقل الإيميل */}
@@ -125,9 +129,13 @@ export default function Login() {
           </button>
         </form>
 
-        <div className="mt-4 text-center text-sm">
+        <div className="mt-4 flex flex-wrap items-center justify-center gap-x-1 text-center text-sm">
           <span className="text-gray-500">{t("Don't have an account? ")}</span>
-          <Link to="/register" className="font-semibold text-[#03382E] hover:text-[#C5A368] hover:underline">
+          <Link
+            to="/register"
+            state={location.state}
+            className="font-semibold text-[#03382E] hover:text-[#C5A368] hover:underline"
+          >
             {t("Sign up")}
           </Link>
         </div>
