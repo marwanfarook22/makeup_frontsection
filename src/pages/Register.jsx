@@ -1,197 +1,204 @@
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 import toast from "react-hot-toast";
 import axiosInstance from "../api/axiosInstance";
 import { useAuthStore } from "../store/useAuthStore";
 
-export default function Profile() {
-  const { user, updateUser } = useAuthStore();
+const registerSchema = z
+  .object({
+    name: z.string().trim().min(3, "Name must be at least 3 characters"),
+    email: z.string().min(1, "Email is required").email("Invalid email address"),
+    phoneNumber: z.string().trim().min(8, "Enter a valid phone number"),
+    password: z.string().min(6, "Password must be at least 6 characters"),
+    confirmPassword: z.string().min(1, "Please confirm your password"),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  });
+
+export default function Register() {
+  const navigate = useNavigate();
+  const login = useAuthStore((state) => state.login);
   const [isLoading, setIsLoading] = useState(false);
-
-  const [imageFile, setImageFile] = useState(null);
-  const [imagePreview, setImagePreview] = useState("");
-  const fileInputRef = useRef(null);
-
-  // استخراج setValue لملء الخانات برمجياً
   const {
     register,
     handleSubmit,
-    setValue,
     formState: { errors },
-  } = useForm();
-
-  // هذا الجزء (useEffect) هو السر: سيقوم بملء الخانات تلقائياً بمجرد فتح الصفحة
-  useEffect(() => {
-    if (user) {
-      setValue("name", user.name || "");
-      setValue("email", user.email || "");
-      setValue("phoneNumber", user.phoneNumber || "");
-
-      if (user.profileImage) {
-        setImagePreview(user.profileImage);
-      }
-    }
-  }, [user, setValue]);
-
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setImageFile(file);
-      setImagePreview(URL.createObjectURL(file));
-    }
-  };
+  } = useForm({ resolver: zodResolver(registerSchema) });
 
   const onSubmit = async (data) => {
     try {
       setIsLoading(true);
-      const formData = new FormData();
+      const userData = {
+        name: data.name,
+        email: data.email,
+        phoneNumber: data.phoneNumber,
+        password: data.password,
+      };
+      const response = await axiosInstance.post("/auth/signUp", userData);
+      const { token, user } = response.data.data || response.data;
 
-      // نرسل البيانات الجديدة أو الموجودة بالفعل
-      formData.append("name", data.name);
-      formData.append("email", data.email);
-      formData.append("phoneNumber", data.phoneNumber);
-
-      if (data.oldPassword && data.newPassword) {
-        formData.append("oldPassword", data.oldPassword);
-        formData.append("newPassword", data.newPassword);
+      if (!token || !user) {
+        throw new Error("Registration response did not include a user and token.");
       }
 
-      if (imageFile) {
-        formData.append("profileImage", imageFile);
-      }
-
-      const userId = user?._id || user?.id;
-      const response = await axiosInstance.put(`/users/${userId}`, formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
-
-      const updatedUserData =
-        response.data.data || response.data.user || response.data;
-      updateUser(updatedUserData);
-
-      toast.success("Profile updated successfully!");
+      const safeUser = { ...user };
+      delete safeUser.password;
+      delete safeUser.passwordResetToken;
+      delete safeUser.passwordResetExpires;
+      login(safeUser, token);
+      toast.success("Account created successfully!");
+      navigate("/");
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to update profile");
+      toast.error(
+        error.response?.data?.message ||
+          error.message ||
+          "Registration failed. Please try again.",
+      );
     } finally {
       setIsLoading(false);
     }
   };
 
+  const inputClassName =
+    "w-full rounded-sm border border-[#E5E7EB] px-3 py-2.5 focus:border-[#03382E] focus:outline-none focus:ring-2 focus:ring-[#C5A368]";
+
   return (
-    <div className="max-w-2xl mx-auto py-10">
-      <div className="bg-white p-8 rounded-lg shadow-md border border-gray-100">
-        <h2 className="text-2xl font-bold text-gray-800 mb-6">
-          Profile Settings
-        </h2>
+    <div className="flex min-h-[75vh] items-center justify-center py-10">
+      <div className="w-full max-w-md border border-[#EFE6DD] bg-white p-8 shadow-sm">
+        <h1 className="mb-2 text-center text-2xl font-bold text-[#1A1A1A]">
+          Create Your Account
+        </h1>
+        <p className="mb-6 text-center text-sm text-gray-500">
+          Join FACES to place and track your orders.
+        </p>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          {/* قسم الصورة الشخصية */}
-          <div className="flex flex-col items-center mb-6">
-            <div
-              className="relative group cursor-pointer"
-              onClick={() => fileInputRef.current.click()}
-            >
-              <img
-                src={imagePreview || "https://via.placeholder.com/150"}
-                alt="Profile Preview"
-                className="w-32 h-32 rounded-full object-cover border-4 border-gray-200"
-              />
-              <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
-                <span className="text-white text-sm font-semibold">Change</span>
-              </div>
-            </div>
-            <input
-              type="file"
-              accept="image/*"
-              className="hidden"
-              ref={fileInputRef}
-              onChange={handleImageChange}
-            />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* حقل الاسم */}
-            <div>
-              <label className="block text-gray-700 text-sm font-bold mb-2">
-                Full Name
-              </label>
-              <input
-                type="text"
-                {...register("name")}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-200"
-              />
-            </div>
-
-            {/* حقل الإيميل */}
-            <div>
-              <label className="block text-gray-700 text-sm font-bold mb-2">
-                Email Address
-              </label>
-              <input
-                type="email"
-                {...register("email")}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-200"
-              />
-            </div>
-          </div>
-
-          {/* حقل رقم الهاتف */}
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>
-            <label className="block text-gray-700 text-sm font-bold mb-2">
+            <label
+              htmlFor="register-name"
+              className="mb-1.5 block text-sm font-semibold text-gray-700"
+            >
+              Full Name
+            </label>
+            <input
+              id="register-name"
+              type="text"
+              autoComplete="name"
+              {...register("name")}
+              className={inputClassName}
+            />
+            {errors.name && (
+              <p className="mt-1 text-xs text-red-600">{errors.name.message}</p>
+            )}
+          </div>
+
+          <div>
+            <label
+              htmlFor="register-email"
+              className="mb-1.5 block text-sm font-semibold text-gray-700"
+            >
+              Email Address
+            </label>
+            <input
+              id="register-email"
+              type="email"
+              autoComplete="email"
+              {...register("email")}
+              className={inputClassName}
+            />
+            {errors.email && (
+              <p className="mt-1 text-xs text-red-600">
+                {errors.email.message}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <label
+              htmlFor="register-phone"
+              className="mb-1.5 block text-sm font-semibold text-gray-700"
+            >
               Phone Number
             </label>
             <input
-              type="text"
+              id="register-phone"
+              type="tel"
+              autoComplete="tel"
               {...register("phoneNumber")}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-200"
+              className={inputClassName}
             />
+            {errors.phoneNumber && (
+              <p className="mt-1 text-xs text-red-600">
+                {errors.phoneNumber.message}
+              </p>
+            )}
           </div>
 
-          <hr className="my-6 border-gray-200" />
-          <h3 className="text-lg font-semibold text-gray-700 mb-4">
-            Change Password (Optional)
-          </h3>
+          <div>
+            <label
+              htmlFor="register-password"
+              className="mb-1.5 block text-sm font-semibold text-gray-700"
+            >
+              Password
+            </label>
+            <input
+              id="register-password"
+              type="password"
+              autoComplete="new-password"
+              {...register("password")}
+              className={inputClassName}
+            />
+            {errors.password && (
+              <p className="mt-1 text-xs text-red-600">
+                {errors.password.message}
+              </p>
+            )}
+          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-gray-700 text-sm font-bold mb-2">
-                Current Password
-              </label>
-              <input
-                type="password"
-                {...register("oldPassword")}
-                placeholder="Leave blank to keep current"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-200"
-              />
-            </div>
-
-            <div>
-              <label className="block text-gray-700 text-sm font-bold mb-2">
-                New Password
-              </label>
-              <input
-                type="password"
-                {...register("newPassword")}
-                placeholder="New password"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-200"
-              />
-            </div>
+          <div>
+            <label
+              htmlFor="register-confirm-password"
+              className="mb-1.5 block text-sm font-semibold text-gray-700"
+            >
+              Confirm Password
+            </label>
+            <input
+              id="register-confirm-password"
+              type="password"
+              autoComplete="new-password"
+              {...register("confirmPassword")}
+              className={inputClassName}
+            />
+            {errors.confirmPassword && (
+              <p className="mt-1 text-xs text-red-600">
+                {errors.confirmPassword.message}
+              </p>
+            )}
           </div>
 
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-md transition disabled:bg-green-300 flex justify-center mt-6"
+            className="flex w-full justify-center bg-[#03382E] px-4 py-3 font-semibold text-white transition hover:bg-[#022D25] disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {isLoading ? (
-              <span className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></span>
-            ) : (
-              "Save Changes"
-            )}
+            {isLoading ? "Creating account..." : "Create Account"}
           </button>
         </form>
+
+        <p className="mt-5 text-center text-sm text-gray-500">
+          Already have an account?{" "}
+          <Link
+            to="/login"
+            className="font-semibold text-[#03382E] hover:text-[#C5A368] hover:underline"
+          >
+            Log in
+          </Link>
+        </p>
       </div>
     </div>
   );

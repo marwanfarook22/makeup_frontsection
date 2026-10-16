@@ -1,9 +1,12 @@
 import { useState, useEffect } from "react";
 import axiosInstance from "../api/axiosInstance";
 import { Link } from "react-router-dom";
+import toast from "react-hot-toast";
+import { useCart } from "../context/CartContext";
 
 // 1. مكون كارت المنتج المستقل (لإدارة حركة الصور المنفصلة لكل منتج)
 const ProductCard = ({ product, variant = "grid" }) => {
+  const { addToCart } = useCart();
   const allImages = [product.primaryImageUrl, ...(product.imagesList || [])];
   const [currentImgIndex, setCurrentImgIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
@@ -159,6 +162,12 @@ const ProductCard = ({ product, variant = "grid" }) => {
 
           <button
             type="button"
+            onClick={() => {
+              addToCart(product);
+              toast.success(`${product.name} added to bag!`);
+            }}
+            disabled={product.quantityOnHand <= 0}
+            aria-label={`Add ${product.name} to bag`}
             className="bg-white border border-[#EFE6DD] text-[#1A1A1A] hover:bg-[#03382E] hover:text-white p-2.5 rounded-sm transition duration-300"
           >
             <svg

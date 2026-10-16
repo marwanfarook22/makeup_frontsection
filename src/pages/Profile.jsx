@@ -7,7 +7,6 @@ import { useAuthStore } from "../store/useAuthStore";
 export default function Profile() {
   const { user, updateUser } = useAuthStore();
   const [isLoading, setIsLoading] = useState(false);
-  console.log("User Data from Zustand:", user);
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState("");
   const fileInputRef = useRef(null);
@@ -17,7 +16,6 @@ export default function Profile() {
     register,
     handleSubmit,
     setValue,
-    formState: { errors },
   } = useForm();
 
   // هذا الجزء (useEffect) هو السر: سيقوم بملء الخانات تلقائياً بمجرد فتح الصفحة
@@ -26,10 +24,6 @@ export default function Profile() {
       setValue("name", user.name || "");
       setValue("email", user.email || "");
       setValue("phoneNumber", user.phoneNumber || "");
-
-      if (user.profileImage) {
-        setImagePreview(user.profileImage);
-      }
     }
   }, [user, setValue]);
 
@@ -100,7 +94,11 @@ export default function Profile() {
               onClick={() => fileInputRef.current.click()}
             >
               <img
-                src={imagePreview || "https://via.placeholder.com/150"}
+                src={
+                  imagePreview ||
+                  user?.profileImage ||
+                  "https://via.placeholder.com/150"
+                }
                 alt="Profile Preview"
                 className="w-32 h-32 rounded-full object-cover border-4 border-gray-200"
               />

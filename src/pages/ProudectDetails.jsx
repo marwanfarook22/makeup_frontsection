@@ -2,9 +2,11 @@ import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import axiosInstance from "../api/axiosInstance";
 import toast from "react-hot-toast";
+import { useCart } from "../context/CartContext";
 
 export default function ProductDetails() {
   const { idOrSlug } = useParams();
+  const { addToCart } = useCart();
   const [product, setProduct] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activeImage, setActiveImage] = useState("");
@@ -338,9 +340,10 @@ export default function ProductDetails() {
               {/* زر الإضافة للسلة */}
               <button
                 type="button"
-                onClick={() =>
-                  toast.success(`Added ${quantity} item(s) to bag!`)
-                }
+                onClick={() => {
+                  addToCart(product, quantity);
+                  toast.success(`Added ${quantity} item(s) to bag!`);
+                }}
                 className="flex-grow bg-[#03382E] hover:bg-black text-white font-bold py-3.5 px-6 transition duration-300 uppercase tracking-wider text-sm"
               >
                 Add to Bag
