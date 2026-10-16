@@ -3,20 +3,21 @@ import { Navigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import axiosInstance from "../api/axiosInstance";
 import { useAuthStore } from "../store/useAuthStore";
+import { useLanguage } from "../context/LanguageState";
 
 const sections = [
-  { id: "overview", label: "نظرة عامة" },
-  { id: "products", label: "المنتجات" },
-  { id: "categories", label: "التصنيفات" },
-  { id: "users", label: "المستخدمون" },
-  { id: "orders", label: "الطلبات" },
+  { id: "overview", label: "Overview" },
+  { id: "products", label: "Products" },
+  { id: "categories", label: "Categories" },
+  { id: "users", label: "Users" },
+  { id: "orders", label: "Orders" },
 ];
 
 const orderStatuses = [
-  { value: "pending", label: "معلق" },
-  { value: "on_the_way", label: "في الطريق" },
-  { value: "delivered", label: "تم التوصيل" },
-  { value: "cancelled", label: "ملغي" },
+  { value: "pending", label: "Pending" },
+  { value: "on_the_way", label: "On the way" },
+  { value: "delivered", label: "Delivered" },
+  { value: "cancelled", label: "Cancelled" },
 ];
 
 const blankProduct = {
@@ -69,6 +70,7 @@ function Panel({ children }) {
 }
 
 export default function Dashboard() {
+  const { t } = useLanguage();
   const { isAuthenticated, user } = useAuthStore();
   const isModerator = user?.role === "moderator";
   const canManageRoles = user?.role === "moderator";
@@ -83,6 +85,7 @@ export default function Dashboard() {
   const [productImageFile, setProductImageFile] = useState(null);
   const [productImagePreview, setProductImagePreview] = useState("");
   const [additionalImageFiles, setAdditionalImageFiles] = useState([]);
+  const [additionalImageUrl, setAdditionalImageUrl] = useState("");
   const productImageInputRef = useRef(null);
   const additionalImageInputRef = useRef(null);
   const productImagePreviewUrl = useRef("");
@@ -122,6 +125,36 @@ export default function Dashboard() {
     setOrders(ordersResponse.data.data || []);
   }, [fetchDashboardData]);
 
+  const addAdditionalImageUrl = () => {
+    const imageUrl = additionalImageUrl.trim();
+    let parsedUrl;
+    try {
+      parsedUrl = new URL(imageUrl);
+    } catch {
+      toast.error(t("Enter a valid image URL."));
+      return;
+    }
+
+    if (!["http:", "https:"].includes(parsedUrl.protocol)) {
+      toast.error(t("Enter a valid image URL."));
+      return;
+    }
+    if (productForm.imagesList.includes(imageUrl)) {
+      toast.error(t("This image URL has already been added."));
+      return;
+    }
+    if (productForm.imagesList.length + additionalImageFiles.length >= 10) {
+      toast.error(t("You can add up to 10 additional product images."));
+      return;
+    }
+
+    setProductForm((form) => ({
+      ...form,
+      imagesList: [...form.imagesList, imageUrl],
+    }));
+    setAdditionalImageUrl("");
+  };
+
   useEffect(() => {
     if (!isAuthenticated || !isModerator) return undefined;
 
@@ -141,7 +174,7 @@ export default function Dashboard() {
         if (isActive) {
           setLoadError(
             error.response?.data?.message ||
-              "تعذر تحميل بيانات لوحة التحكم. تحقق من صلاحيات حسابك.",
+              t("Unable to load dashboard data. Check your account permissions."),
           );
         }
       })
@@ -152,7 +185,7 @@ export default function Dashboard() {
     return () => {
       isActive = false;
     };
-  }, [isAuthenticated, isModerator, fetchDashboardData]);
+  }, [isAuthenticated, isModerator, fetchDashboardData, t]);
 
   const counts = useMemo(
     () => ({
@@ -169,6 +202,7 @@ export default function Dashboard() {
 
   const resetProductForm = () => {
     setProductForm(blankProduct);
+    setAdditionalImageUrl("");
     if (productImagePreviewUrl.current) {
       URL.revokeObjectURL(productImagePreviewUrl.current);
       productImagePreviewUrl.current = "";
@@ -212,16 +246,16 @@ export default function Dashboard() {
       setIsSaving(true);
       if (editingProductId) {
         await axiosInstance.put(`/products/${editingProductId}`, payload);
-        toast.success("تم تحديث المنتج.");
+        toast.success(t("Product updated."));
       } else {
         await axiosInstance.post("/products", payload);
-        toast.success("تمت إضافة المنتج.");
+        toast.success(t("Product added."));
       }
       resetProductForm();
       await loadDashboardData();
     } catch (error) {
       toast.error(
-        error.response?.data?.message || "تعذر حفظ المنتج. تحقق من البيانات.",
+        error.response?.data?.message || t("Unable to save product. Check the details."),
       );
     } finally {
       setIsSaving(false);
@@ -252,18 +286,19 @@ export default function Dashboard() {
       category: product.category?._id || product.category || "",
       isFeatured: Boolean(product.isFeatured),
     });
+    setAdditionalImageUrl("");
     setActiveSection("products");
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const deleteProduct = async (product) => {
-    if (!window.confirm(`هل تريد حذف المنتج "${product.name}"؟`)) return;
+    if (!window.confirm(t('Delete product "{name}"?').replace("{name}", product.name))) return;
     try {
       await axiosInstance.delete(`/products/${product._id}`);
-      toast.success("تم حذف المنتج.");
+      toast.success(t("Product deleted."));
       await loadDashboardData();
     } catch (error) {
-      toast.error(error.response?.data?.message || "تعذر حذف المنتج.");
+      toast.error(error.response?.data?.message || t("Unable to delete product."));
     }
   };
 
@@ -275,17 +310,17 @@ export default function Dashboard() {
         await axiosInstance.put(`/categories/${editingCategoryId}`, {
           name: categoryName.trim(),
         });
-        toast.success("تم تحديث التصنيف.");
+        toast.success(t("Category updated."));
       } else {
         await axiosInstance.post("/categories", { name: categoryName.trim() });
-        toast.success("تمت إضافة التصنيف.");
+        toast.success(t("Category added."));
       }
       setCategoryName("");
       setEditingCategoryId("");
       await loadDashboardData();
     } catch (error) {
       toast.error(
-        error.response?.data?.message || "تعذر حفظ التصنيف. تحقق من الاسم.",
+        error.response?.data?.message || t("Unable to save category. Check the name."),
       );
     } finally {
       setIsSaving(false);
@@ -295,17 +330,17 @@ export default function Dashboard() {
   const deleteCategory = async (category) => {
     if (
       !window.confirm(
-        `هل تريد حذف التصنيف "${category.name}"؟ تأكد أن لا توجد منتجات مرتبطة به.`,
+        t('Delete category "{name}"? Make sure no products are linked to it.').replace("{name}", category.name),
       )
     ) {
       return;
     }
     try {
       await axiosInstance.delete(`/categories/${category._id}`);
-      toast.success("تم حذف التصنيف.");
+      toast.success(t("Category deleted."));
       await loadDashboardData();
     } catch (error) {
-      toast.error(error.response?.data?.message || "تعذر حذف التصنيف.");
+      toast.error(error.response?.data?.message || t("Unable to delete category."));
     }
   };
 
@@ -322,18 +357,18 @@ export default function Dashboard() {
       setIsSaving(true);
       if (editingUserId) {
         await axiosInstance.put(`/users/${editingUserId}`, payload);
-        toast.success("تم تحديث بيانات المستخدم.");
+        toast.success(t("User updated."));
       } else {
         payload.password = userForm.password;
         await axiosInstance.post("/users/admin", payload);
-        toast.success("تمت إضافة المستخدم.");
+        toast.success(t("User added."));
       }
       resetUserForm();
       await loadDashboardData();
     } catch (error) {
       toast.error(
         error.response?.data?.message ||
-          "تعذر حفظ المستخدم. تحقق من البريد ورقم الهاتف.",
+          t("Unable to save user. Check the email and phone number."),
       );
     } finally {
       setIsSaving(false);
@@ -356,27 +391,27 @@ export default function Dashboard() {
   const deleteUser = async (account) => {
     if (
       !window.confirm(
-        `هل تريد حذف حساب ${account.name}؟ لا يمكن التراجع عن هذا الإجراء.`,
+        t("Delete the account for {name}? This action cannot be undone.").replace("{name}", account.name),
       )
     ) {
       return;
     }
     try {
       await axiosInstance.delete(`/users/${account._id}`);
-      toast.success("تم حذف المستخدم.");
+      toast.success(t("User deleted."));
       await loadDashboardData();
     } catch (error) {
-      toast.error(error.response?.data?.message || "تعذر حذف المستخدم.");
+      toast.error(error.response?.data?.message || t("Unable to delete user."));
     }
   };
 
   const updateOrderStatus = async (orderId, status) => {
     try {
       await axiosInstance.patch(`/bills/${orderId}/status`, { status });
-      toast.success("تم تحديث حالة الطلب.");
+      toast.success(t("Order status updated."));
       await loadDashboardData();
     } catch (error) {
-      toast.error(error.response?.data?.message || "تعذر تحديث حالة الطلب.");
+      toast.error(error.response?.data?.message || t("Unable to update order status."));
     }
   };
 
@@ -385,17 +420,17 @@ export default function Dashboard() {
       <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#C5A368]">
-            FACES
+            SheGlam
           </p>
           <h1 className="mt-2 text-3xl font-bold text-[#1A1A1A]">
-            لوحة التحكم
+            {t("Dashboard")}
           </h1>
           <p className="mt-1 text-sm text-gray-500">
-            إدارة المتجر والمنتجات والعملاء والطلبات.
+            {t("Manage your store, products, customers, and orders.")}
           </p>
         </div>
         <span className="rounded-full bg-[#F5EBE6] px-4 py-2 text-sm font-semibold text-[#03382E]">
-          مشرف
+          {t("Moderator")}
         </span>
       </div>
 
@@ -409,7 +444,7 @@ export default function Dashboard() {
             onClick={() => window.location.reload()}
             className="mt-4 rounded-sm bg-[#03382E] px-4 py-2 text-white"
           >
-            إعادة المحاولة
+            {t("Retry")}
           </button>
         </Panel>
       ) : isLoading ? (
@@ -430,20 +465,20 @@ export default function Dashboard() {
                     : "bg-white text-gray-600 hover:bg-[#F5EBE6]"
                 }`}
               >
-                {section.label}
+                {t(section.label)}
               </button>
             ))}
           </div>
 
           {activeSection === "overview" && (
             <div>
-              <SectionHeading title="ملخص المتجر" />
+              <SectionHeading title={t("Store overview")} />
               <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
                 {[
-                  ["المنتجات", counts.products],
-                  ["التصنيفات", counts.categories],
-                  ["المستخدمون", counts.users],
-                  ["الطلبات", counts.orders],
+                  [t("Products"), counts.products],
+                  [t("Categories"), counts.categories],
+                  [t("Users"), counts.users],
+                  [t("Orders"), counts.orders],
                 ].map(([label, count]) => (
                   <Panel key={label}>
                     <p className="text-sm text-gray-500">{label}</p>
@@ -457,10 +492,10 @@ export default function Dashboard() {
                 <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
                   <div>
                     <h2 className="font-bold text-[#1A1A1A]">
-                      أحدث الطلبات
+                      {t("Recent orders")}
                     </h2>
                     <p className="mt-1 text-sm text-gray-500">
-                      راجع الطلبات وحدّث حالتها من قسم الطلبات.
+                      {t("Review orders and update their status in the orders section.")}
                     </p>
                   </div>
                   <button
@@ -468,7 +503,7 @@ export default function Dashboard() {
                     onClick={() => setActiveSection("orders")}
                     className="bg-[#03382E] px-4 py-2 text-sm font-semibold text-white"
                   >
-                    إدارة الطلبات
+                    {t("Manage orders")}
                   </button>
                 </div>
                 <div className="mt-4 space-y-2">
@@ -484,7 +519,7 @@ export default function Dashboard() {
                   ))}
                   {orders.length === 0 && (
                     <p className="border-t border-[#EFE6DD] pt-3 text-sm text-gray-500">
-                      لا توجد طلبات حتى الآن.
+                      {t("There are no orders yet.")}
                     </p>
                   )}
                 </div>
@@ -496,11 +531,11 @@ export default function Dashboard() {
             <div className="grid gap-6 xl:grid-cols-[minmax(320px,0.8fr)_1.2fr]">
               <Panel>
                 <SectionHeading
-                  title={editingProductId ? "تعديل منتج" : "إضافة منتج"}
-                  subtitle="اختر صورة من جهازك لرفعها مباشرة إلى Cloudinary، أو أدخل رابطاً للصورة."
+                  title={t(editingProductId ? "Edit product" : "Add product")}
+                  subtitle={t("Choose an image from your device to upload to Cloudinary, or enter an image URL.")}
                 />
                 <form onSubmit={handleProductSubmit} className="space-y-4">
-                  <Field label="اسم المنتج">
+                  <Field label={t("Product name")}>
                     <input
                       required
                       className={inputClass}
@@ -510,7 +545,7 @@ export default function Dashboard() {
                       }
                     />
                   </Field>
-                  <Field label="الوصف">
+                  <Field label={t("Description")}>
                     <textarea
                       required
                       rows={3}
@@ -525,7 +560,7 @@ export default function Dashboard() {
                     />
                   </Field>
                   <div className="grid grid-cols-2 gap-3">
-                    <Field label="السعر">
+                    <Field label={t("Price")}>
                       <input
                         required
                         min="0"
@@ -541,7 +576,7 @@ export default function Dashboard() {
                         }
                       />
                     </Field>
-                    <Field label="سعر التخفيض">
+                    <Field label={t("Sale price")}>
                       <input
                         min="0"
                         step="0.01"
@@ -557,7 +592,7 @@ export default function Dashboard() {
                       />
                     </Field>
                   </div>
-                  <Field label="صورة المنتج من الجهاز">
+                  <Field label={t("Product image from device")}>
                     <input
                       ref={productImageInputRef}
                       type="file"
@@ -569,7 +604,7 @@ export default function Dashboard() {
                         const file = event.target.files?.[0];
                         if (!file) return;
                         if (file.size > 5 * 1024 * 1024) {
-                          toast.error("يجب ألا يتجاوز حجم الصورة 5 ميجابايت.");
+                          toast.error(t("Image size must not exceed 5 MB."));
                           event.target.value = "";
                           return;
                         }
@@ -590,10 +625,10 @@ export default function Dashboard() {
                       className={`${inputClass} file:mr-2 file:cursor-pointer file:border-0 file:bg-[#F5EBE6] file:px-3 file:py-1.5 file:font-semibold file:text-[#03382E]`}
                     />
                     <span className="block text-xs font-normal text-gray-500">
-                      JPG أو PNG أو WEBP، بحد أقصى 5 ميجابايت.
+                      {t("JPG, PNG, or WEBP; up to 5 MB.")}
                     </span>
                   </Field>
-                  <Field label="أو رابط الصورة الرئيسية">
+                  <Field label={t("Or main image URL")}>
                     <input
                       type="url"
                       className={inputClass}
@@ -618,11 +653,11 @@ export default function Dashboard() {
                       src={
                         productImagePreview || productForm.primaryImageUrl
                       }
-                      alt="معاينة صورة المنتج"
+                      alt={t("Product image preview")}
                       className="h-36 w-36 rounded-sm border border-[#EFE6DD] object-cover"
                     />
                   )}
-                  <Field label="صور إضافية من الجهاز">
+                  <Field label={t("Additional images from device")}>
                     <input
                       ref={additionalImageInputRef}
                       type="file"
@@ -638,7 +673,7 @@ export default function Dashboard() {
                           )
                         ) {
                           toast.error(
-                            "يجب ألا يتجاوز حجم كل صورة 5 ميجابايت.",
+                            t("Each image must not exceed 5 MB."),
                           );
                           event.target.value = "";
                           return;
@@ -650,7 +685,7 @@ export default function Dashboard() {
                           10
                         ) {
                           toast.error(
-                            "يمكن إضافة 10 صور إضافية كحد أقصى للمنتج.",
+                            t("You can add up to 10 additional product images."),
                           );
                           event.target.value = "";
                           return;
@@ -664,8 +699,35 @@ export default function Dashboard() {
                       className={`${inputClass} file:mr-2 file:cursor-pointer file:border-0 file:bg-[#F5EBE6] file:px-3 file:py-1.5 file:font-semibold file:text-[#03382E]`}
                     />
                     <span className="block text-xs font-normal text-gray-500">
-                      اختر عدة صور معاً؛ JPG أو PNG أو WEBP، حتى 5 ميجابايت للصورة.
+                      {t("Select multiple images; JPG, PNG, or WEBP, up to 5 MB per image.")}
                     </span>
+                  </Field>
+                  <Field label={t("Or add an additional image URL")}>
+                    <div className="flex gap-2">
+                      <input
+                        type="url"
+                        value={additionalImageUrl}
+                        onChange={(event) =>
+                          setAdditionalImageUrl(event.target.value)
+                        }
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter") {
+                            event.preventDefault();
+                            addAdditionalImageUrl();
+                          }
+                        }}
+                        placeholder="https://example.com/image.jpg"
+                        className={inputClass}
+                      />
+                      <button
+                        type="button"
+                        onClick={addAdditionalImageUrl}
+                        disabled={!additionalImageUrl.trim()}
+                        className="shrink-0 bg-[#03382E] px-4 py-2 font-semibold text-white disabled:opacity-50"
+                      >
+                        {t("Add image URL")}
+                      </button>
+                    </div>
                   </Field>
                   {(productForm.imagesList.length > 0 ||
                     additionalImageFiles.length > 0) && (
@@ -677,7 +739,7 @@ export default function Dashboard() {
                         >
                           <img
                             src={imageUrl}
-                            alt={`صورة إضافية ${index + 1}`}
+                            alt={`${t("Additional image")} ${index + 1}`}
                             className="h-full w-full object-cover"
                           />
                           <button
@@ -690,7 +752,7 @@ export default function Dashboard() {
                                 ),
                               }))
                             }
-                            aria-label={`حذف الصورة الإضافية ${index + 1}`}
+                            aria-label={`${t("Remove additional image")} ${index + 1}`}
                             className="absolute right-1 top-1 rounded-full bg-black/70 px-1.5 text-xs text-white"
                           >
                             ×
@@ -712,7 +774,7 @@ export default function Dashboard() {
                                 ),
                               )
                             }
-                            aria-label={`إزالة الملف ${file.name}`}
+                            aria-label={`${t("Remove file")} ${file.name}`}
                             className="absolute right-1 top-1 rounded-full bg-black/70 px-1.5 text-xs text-white"
                           >
                             ×
@@ -722,7 +784,7 @@ export default function Dashboard() {
                     </div>
                   )}
                   <div className="grid grid-cols-2 gap-3">
-                    <Field label="المخزون">
+                    <Field label={t("Stock")}>
                       <input
                         required
                         min="0"
@@ -738,7 +800,7 @@ export default function Dashboard() {
                         }
                       />
                     </Field>
-                    <Field label="التصنيف">
+                    <Field label={t("Category")}>
                       <select
                         required
                         className={inputClass}
@@ -750,7 +812,7 @@ export default function Dashboard() {
                           })
                         }
                       >
-                        <option value="">اختر تصنيفاً</option>
+                        <option value="">{t("Choose a category")}</option>
                         {categories.map((category) => (
                           <option key={category._id} value={category._id}>
                             {category.name}
@@ -771,7 +833,7 @@ export default function Dashboard() {
                       }
                       className="accent-[#03382E]"
                     />
-                    منتج مميز
+                    {t("Featured product")}
                   </label>
                   <div className="flex gap-2">
                     <button
@@ -779,10 +841,10 @@ export default function Dashboard() {
                       className="flex-1 bg-[#03382E] px-4 py-2.5 font-semibold text-white disabled:opacity-50"
                     >
                       {isSaving
-                        ? "جارٍ الحفظ..."
+                        ? t("Saving...")
                         : editingProductId
-                          ? "حفظ التعديلات"
-                          : "إضافة المنتج"}
+                          ? t("Save changes")
+                          : t("Add product")}
                     </button>
                     {editingProductId && (
                       <button
@@ -790,20 +852,20 @@ export default function Dashboard() {
                         onClick={resetProductForm}
                         className="border border-[#D9D1C7] px-4 py-2.5"
                       >
-                        إلغاء
+                        {t("Cancel")}
                       </button>
                     )}
                   </div>
                   {categories.length === 0 && (
                     <p className="text-sm text-amber-700">
-                      أضف تصنيفاً قبل إنشاء المنتجات.
+                      {t("Add a category before creating products.")}
                     </p>
                   )}
                 </form>
               </Panel>
 
               <Panel>
-                <SectionHeading title={`المنتجات (${products.length})`} />
+                <SectionHeading title={`${t("Products")} (${products.length})`} />
                 <div className="space-y-3">
                   {products.map((product) => (
                     <article
@@ -820,8 +882,8 @@ export default function Dashboard() {
                           {product.name}
                         </h3>
                         <p className="text-sm text-gray-500">
-                          {product.category?.name || "بدون تصنيف"} ·{" "}
-                          {product.quantityOnHand} متاح · {product.price} EGP
+                          {product.category?.name || t("Uncategorized")} ·{" "}
+                          {product.quantityOnHand} {t("available")} · {product.price} EGP
                         </p>
                       </div>
                       <button
@@ -829,19 +891,19 @@ export default function Dashboard() {
                         onClick={() => editProduct(product)}
                         className="text-sm font-semibold text-[#03382E] hover:underline"
                       >
-                        تعديل
+                        {t("Edit")}
                       </button>
                       <button
                         type="button"
                         onClick={() => deleteProduct(product)}
                         className="text-sm font-semibold text-red-700 hover:underline"
                       >
-                        حذف
+                        {t("Delete")}
                       </button>
                     </article>
                   ))}
                   {products.length === 0 && (
-                    <p className="text-sm text-gray-500">لا توجد منتجات.</p>
+                    <p className="text-sm text-gray-500">{t("There are no products.")}</p>
                   )}
                 </div>
               </Panel>
@@ -852,10 +914,10 @@ export default function Dashboard() {
             <div className="grid gap-6 md:grid-cols-[minmax(260px,0.7fr)_1.3fr]">
               <Panel>
                 <SectionHeading
-                  title={editingCategoryId ? "تعديل تصنيف" : "إضافة تصنيف"}
+                  title={t(editingCategoryId ? "Edit category" : "Add category")}
                 />
                 <form onSubmit={handleCategorySubmit} className="space-y-4">
-                  <Field label="اسم التصنيف">
+                  <Field label={t("Category name")}>
                     <input
                       required
                       className={inputClass}
@@ -868,7 +930,7 @@ export default function Dashboard() {
                       disabled={isSaving}
                       className="flex-1 bg-[#03382E] px-4 py-2.5 font-semibold text-white disabled:opacity-50"
                     >
-                      {editingCategoryId ? "حفظ التعديل" : "إضافة التصنيف"}
+                      {editingCategoryId ? t("Save changes") : t("Add category")}
                     </button>
                     {editingCategoryId && (
                       <button
@@ -879,14 +941,14 @@ export default function Dashboard() {
                         }}
                         className="border border-[#D9D1C7] px-4"
                       >
-                        إلغاء
+                        {t("Cancel")}
                       </button>
                     )}
                   </div>
                 </form>
               </Panel>
               <Panel>
-                <SectionHeading title={`التصنيفات (${categories.length})`} />
+                <SectionHeading title={`${t("Categories")} (${categories.length})`} />
                 <div className="divide-y divide-[#EFE6DD]">
                   {categories.map((category) => (
                     <div
@@ -905,21 +967,21 @@ export default function Dashboard() {
                           }}
                           className="text-sm font-semibold text-[#03382E] hover:underline"
                         >
-                          تعديل
+                          {t("Edit")}
                         </button>
                         <button
                           type="button"
                           onClick={() => deleteCategory(category)}
                           className="text-sm font-semibold text-red-700 hover:underline"
                         >
-                          حذف
+                          {t("Delete")}
                         </button>
                       </div>
                     </div>
                   ))}
                   {categories.length === 0 && (
                     <p className="py-3 text-sm text-gray-500">
-                      لا توجد تصنيفات.
+                      {t("There are no categories.")}
                     </p>
                   )}
                 </div>
@@ -931,15 +993,15 @@ export default function Dashboard() {
             <div className="grid gap-6 xl:grid-cols-[minmax(320px,0.8fr)_1.2fr]">
               <Panel>
                 <SectionHeading
-                  title={editingUserId ? "تعديل مستخدم" : "إضافة مستخدم"}
+                  title={t(editingUserId ? "Edit user" : "Add user")}
                   subtitle={
                     editingUserId
-                      ? "اترك كلمة المرور بدون تغيير من صفحة المستخدم."
-                      : "رقم الهاتف والبريد يجب أن يكونا غير مستخدمين."
+                      ? t("Leave the password unchanged on the user page.")
+                      : t("The phone number and email must be unused.")
                   }
                 />
                 <form onSubmit={handleUserSubmit} className="space-y-4">
-                  <Field label="الاسم">
+                  <Field label={t("Name")}>
                     <input
                       required
                       minLength={3}
@@ -950,7 +1012,7 @@ export default function Dashboard() {
                       }
                     />
                   </Field>
-                  <Field label="البريد الإلكتروني">
+                  <Field label={t("Email Address")}>
                     <input
                       required
                       type="email"
@@ -961,7 +1023,7 @@ export default function Dashboard() {
                       }
                     />
                   </Field>
-                  <Field label="رقم الهاتف">
+                  <Field label={t("Phone Number")}>
                     <input
                       required
                       type="tel"
@@ -976,7 +1038,7 @@ export default function Dashboard() {
                     />
                   </Field>
                   {!editingUserId && (
-                    <Field label="كلمة المرور">
+                    <Field label={t("Password")}>
                       <input
                         required
                         minLength={6}
@@ -993,7 +1055,7 @@ export default function Dashboard() {
                     </Field>
                   )}
                   {canManageRoles && (
-                    <Field label="الصلاحية">
+                    <Field label={t("Role")}>
                       <select
                         className={inputClass}
                         value={userForm.role}
@@ -1001,9 +1063,9 @@ export default function Dashboard() {
                           setUserForm({ ...userForm, role: event.target.value })
                         }
                       >
-                        <option value="user">عميل</option>
-                        <option value="moderator">مشرف</option>
-                        <option value="admin">مدير</option>
+                        <option value="user">{t("Customer")}</option>
+                        <option value="moderator">{t("Moderator")}</option>
+                        <option value="admin">{t("Administrator")}</option>
                       </select>
                     </Field>
                   )}
@@ -1013,10 +1075,10 @@ export default function Dashboard() {
                       className="flex-1 bg-[#03382E] px-4 py-2.5 font-semibold text-white disabled:opacity-50"
                     >
                       {isSaving
-                        ? "جارٍ الحفظ..."
+                        ? t("Saving...")
                         : editingUserId
-                          ? "حفظ التعديلات"
-                          : "إضافة المستخدم"}
+                          ? t("Save changes")
+                          : t("Add user")}
                     </button>
                     {editingUserId && (
                       <button
@@ -1024,7 +1086,7 @@ export default function Dashboard() {
                         onClick={resetUserForm}
                         className="border border-[#D9D1C7] px-4"
                       >
-                        إلغاء
+                        {t("Cancel")}
                       </button>
                     )}
                   </div>
@@ -1032,7 +1094,7 @@ export default function Dashboard() {
               </Panel>
 
               <Panel>
-                <SectionHeading title={`المستخدمون (${users.length})`} />
+                <SectionHeading title={`${t("Users")} (${users.length})`} />
                 <div className="space-y-3">
                   {users.map((account) => (
                     <article
@@ -1060,7 +1122,7 @@ export default function Dashboard() {
                         onClick={() => editUser(account)}
                         className="text-sm font-semibold text-[#03382E] hover:underline"
                       >
-                        تعديل
+                        {t("Edit")}
                       </button>
                       <button
                         type="button"
@@ -1068,12 +1130,12 @@ export default function Dashboard() {
                         onClick={() => deleteUser(account)}
                         className="text-sm font-semibold text-red-700 hover:underline disabled:cursor-not-allowed disabled:opacity-40"
                       >
-                        حذف
+                        {t("Delete")}
                       </button>
                     </article>
                   ))}
                   {users.length === 0 && (
-                    <p className="text-sm text-gray-500">لا يوجد مستخدمون.</p>
+                    <p className="text-sm text-gray-500">{t("There are no users.")}</p>
                   )}
                 </div>
               </Panel>
@@ -1082,7 +1144,7 @@ export default function Dashboard() {
 
           {activeSection === "orders" && (
             <Panel>
-              <SectionHeading title={`إدارة الطلبات (${orders.length})`} />
+              <SectionHeading title={`${t("Manage orders")} (${orders.length})`} />
               <div className="space-y-4">
                 {orders.map((order) => (
                   <article
@@ -1105,7 +1167,7 @@ export default function Dashboard() {
                           {Number(order.totalAmount || 0).toFixed(2)} EGP
                         </p>
                         <label className="mt-2 block text-xs text-gray-500">
-                          حالة الطلب
+                          {t("Order status")}
                           <select
                             value={order.status}
                             onChange={(event) =>
@@ -1133,7 +1195,7 @@ export default function Dashboard() {
                   </article>
                 ))}
                 {orders.length === 0 && (
-                  <p className="text-sm text-gray-500">لا توجد طلبات.</p>
+                  <p className="text-sm text-gray-500">{t("There are no orders.")}</p>
                 )}
               </div>
             </Panel>

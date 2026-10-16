@@ -2,15 +2,17 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import axiosInstance from "../api/axiosInstance";
 import { useAuthStore } from "../store/useAuthStore";
+import { useLanguage } from "../context/LanguageState";
 
 const orderStatusLabels = {
-  pending: "معلق",
-  on_the_way: "في الطريق",
-  delivered: "تم التوصيل",
-  cancelled: "ملغي",
+  pending: "Pending",
+  on_the_way: "On the way",
+  delivered: "Delivered",
+  cancelled: "Cancelled",
 };
 
 export default function MyOrders() {
+  const { t, language } = useLanguage();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const [orders, setOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -31,7 +33,7 @@ export default function MyOrders() {
         if (isActive) {
           setErrorMessage(
             error.response?.data?.message ||
-              "تعذر تحميل طلباتك السابقة. يرجى المحاولة لاحقاً.",
+              "Unable to load your previous orders. Please try again later.",
           );
         }
       })
@@ -48,24 +50,24 @@ export default function MyOrders() {
     <section className="mx-auto max-w-4xl py-8">
       <div className="mb-8">
         <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#C5A368]">
-          FACES
+          SheGlam
         </p>
-        <h1 className="mt-2 text-3xl font-bold text-[#1A1A1A]">طلباتي</h1>
+        <h1 className="mt-2 text-3xl font-bold text-[#1A1A1A]">{t("My Orders")}</h1>
       </div>
 
       <div className="rounded-sm border border-[#EFE6DD] bg-white p-6 shadow-sm">
         {!isAuthenticated ? (
           <p className="text-gray-600">
-            سجّل الدخول لعرض طلباتك السابقة.{" "}
+            {t("Log in to view your previous orders.")}{" "}
             <Link to="/login" className="font-semibold text-[#03382E] underline">
-              تسجيل الدخول
+              {t("Login")}
             </Link>
           </p>
         ) : isLoading ? (
           <div className="flex justify-center py-8">
             <span
               className="h-8 w-8 animate-spin rounded-full border-4 border-[#03382E] border-t-transparent"
-              aria-label="جارٍ تحميل الطلبات"
+              aria-label={t("Loading orders")}
             />
           </div>
         ) : errorMessage ? (
@@ -74,12 +76,12 @@ export default function MyOrders() {
           </p>
         ) : orders.length === 0 ? (
           <div className="py-6 text-center">
-            <p className="mb-4 text-gray-600">لا توجد طلبات سابقة.</p>
+            <p className="mb-4 text-gray-600">{t("No previous orders.")}</p>
             <Link
               to="/"
               className="inline-block bg-[#03382E] px-5 py-2.5 font-semibold text-white transition hover:bg-black"
             >
-              ابدأ التسوق
+              {t("Start shopping")}
             </Link>
           </div>
         ) : (
@@ -96,7 +98,9 @@ export default function MyOrders() {
                     </h2>
                     <p className="mt-1 text-sm text-gray-500">
                       {order.createdAt
-                        ? new Date(order.createdAt).toLocaleDateString("ar-EG")
+                        ? new Date(order.createdAt).toLocaleDateString(
+                            language === "ar" ? "ar-EG" : "en-US",
+                          )
                         : ""}
                     </p>
                   </div>
@@ -111,7 +115,7 @@ export default function MyOrders() {
                             : "bg-amber-100 text-amber-800"
                     }`}
                   >
-                    {orderStatusLabels[order.status] || order.status}
+                    {t(orderStatusLabels[order.status] || order.status)}
                   </span>
                 </div>
 

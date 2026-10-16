@@ -3,10 +3,12 @@ import axiosInstance from "../api/axiosInstance";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useCart } from "../context/CartContext";
+import { useLanguage } from "../context/LanguageState";
 
 // 1. مكون كارت المنتج المستقل (لإدارة حركة الصور المنفصلة لكل منتج)
 const ProductCard = ({ product, variant = "grid" }) => {
   const { addToCart } = useCart();
+  const { t } = useLanguage();
   const allImages = [product.primaryImageUrl, ...(product.imagesList || [])];
   const [currentImgIndex, setCurrentImgIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
@@ -50,7 +52,7 @@ const ProductCard = ({ product, variant = "grid" }) => {
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none"></div>
 
         <span className="absolute top-4 left-4 bg-[#F5EBE6] text-[#1A1A1A] text-[10px] font-semibold uppercase tracking-wider px-3 py-1 rounded-sm z-10">
-          ⭐ Featured
+          ⭐ {t("Featured")}
         </span>
 
         <div className="absolute bottom-0 left-0 p-5 w-full pointer-events-none">
@@ -61,15 +63,15 @@ const ProductCard = ({ product, variant = "grid" }) => {
             {product.salesPrice > 0 && product.salesPrice < product.price ? (
               <>
                 <span className="text-lg font-bold text-[#E63946]">
-                  ${product.salesPrice}
+                  {product.salesPrice} EGP
                 </span>
                 <span className="text-sm text-gray-300 line-through">
-                  ${product.price}
+                  {product.price} EGP
                 </span>
               </>
             ) : (
               <span className="text-lg font-bold text-white">
-                ${product.price}
+                {product.price} EGP
               </span>
             )}
           </div>
@@ -95,13 +97,13 @@ const ProductCard = ({ product, variant = "grid" }) => {
     >
       {product.isFeatured && (
         <span className="absolute top-3 left-3 z-10 bg-[#F5EBE6] text-[#1A1A1A] text-[10px] font-semibold uppercase tracking-wider px-2 py-1 rounded-sm pointer-events-none">
-          ⭐ Featured
+          ⭐ {t("Featured")}
         </span>
       )}
 
       {product.salesPrice > 0 && product.salesPrice < product.price && (
         <span className="absolute top-3 right-3 z-10 bg-[#E63946] text-white text-xs font-semibold px-2 py-1 rounded-sm pointer-events-none">
-          Sale
+          {t("Sale")}
         </span>
       )}
 
@@ -147,15 +149,15 @@ const ProductCard = ({ product, variant = "grid" }) => {
             {product.salesPrice > 0 && product.salesPrice < product.price ? (
               <div className="flex flex-col">
                 <span className="text-lg font-bold text-[#E63946]">
-                  ${product.salesPrice}
+                  {product.salesPrice} EGP
                 </span>
                 <span className="text-xs text-gray-400 line-through">
-                  ${product.price}
+                  {product.price} EGP
                 </span>
               </div>
             ) : (
               <span className="text-lg font-bold text-[#1A1A1A]">
-                ${product.price}
+                {product.price} EGP
               </span>
             )}
           </div>
@@ -164,10 +166,10 @@ const ProductCard = ({ product, variant = "grid" }) => {
             type="button"
             onClick={() => {
               addToCart(product);
-              toast.success(`${product.name} added to bag!`);
+              toast.success(`${product.name} ${t("added to bag!")}`);
             }}
             disabled={product.quantityOnHand <= 0}
-            aria-label={`Add ${product.name} to bag`}
+            aria-label={`${t("Add to bag")} ${product.name}`}
             className="bg-white border border-[#EFE6DD] text-[#1A1A1A] hover:bg-[#03382E] hover:text-white p-2.5 rounded-sm transition duration-300"
           >
             <svg
@@ -192,6 +194,7 @@ const ProductCard = ({ product, variant = "grid" }) => {
 };
 
 export default function Home() {
+  const { t } = useLanguage();
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -241,10 +244,10 @@ export default function Home() {
         <aside className="w-full md:w-1/4 lg:w-1/5 flex-shrink-0">
           <div className="sticky top-6 space-y-6">
             <div className="bg-white p-4 rounded-sm shadow-sm border border-[#EFE6DD]">
-              <h3 className="text-lg font-bold text-[#1A1A1A] mb-3">Search</h3>
+              <h3 className="text-lg font-bold text-[#1A1A1A] mb-3">{t("Search")}</h3>
               <input
                 type="text"
-                placeholder="ابحث هنا..."
+                placeholder={t("Search")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full px-4 py-2 rounded-full border border-[#E5E7EB] placeholder:text-gray-500 focus:outline-none focus:border-[#03382E] focus:ring-2 focus:ring-[#C5A368] text-sm text-[#1A1A1A] bg-white"
@@ -254,7 +257,7 @@ export default function Home() {
 
             <div className="bg-white p-4 rounded-sm shadow-sm border border-[#EFE6DD] hidden md:block">
               <h3 className="text-lg font-bold text-[#1A1A1A] mb-4 border-b border-[#EFE6DD] pb-2">
-                Categories
+                {t("Categories")}
               </h3>
               <ul className="space-y-2">
                 <li>
@@ -266,7 +269,7 @@ export default function Home() {
                         : "text-gray-500 hover:bg-[#F5EBE6]"
                     }`}
                   >
-                    All Products
+                    {t("All Products")}
                   </button>
                 </li>
                 {categories.map((cat) => (
@@ -295,7 +298,7 @@ export default function Home() {
                     : "bg-white border border-[#EFE6DD] text-gray-500"
                 }`}
               >
-                All
+                {t("All")}
               </button>
               {categories.map((cat) => (
                 <button
@@ -320,7 +323,7 @@ export default function Home() {
             selectedCategory === "All" && (
               <div className="mb-12">
                 <h2 className="text-2xl font-bold text-[#1A1A1A] mb-6 flex items-center gap-2">
-                  <span>🔥</span> Top Featured
+                  <span>🔥</span> {t("Top Featured")}
                 </h2>
                 <div className="flex overflow-x-auto snap-x snap-mandatory gap-6 pb-4 scrollbar-hide">
                   {featuredProducts.map((product) => (
@@ -337,12 +340,12 @@ export default function Home() {
           <div className="mb-6">
             <h2 className="text-xl font-bold text-[#1A1A1A] mb-4">
               {selectedCategory === "All"
-                ? "All Products"
+                ? t("All Products")
                 : categories.find(
                     (category) => category._id === selectedCategory,
                   )?.name}
               <span className="text-sm font-normal text-gray-500 ml-2">
-                ({filteredProducts.length} items)
+                ({filteredProducts.length} {t("items")})
               </span>
             </h2>
           </div>
@@ -364,7 +367,7 @@ export default function Home() {
           ) : (
             <div className="text-center py-20 bg-white border border-[#EFE6DD] rounded-sm">
               <p className="text-xl text-gray-500">
-                لا توجد منتجات مطابقة لبحثك.
+                {t("No products match your search.")}
               </p>
             </div>
           )}

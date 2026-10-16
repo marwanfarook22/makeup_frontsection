@@ -3,8 +3,10 @@ import { useParams, Link } from "react-router-dom";
 import axiosInstance from "../api/axiosInstance";
 import toast from "react-hot-toast";
 import { useCart } from "../context/CartContext";
+import { useLanguage } from "../context/LanguageState";
 
 export default function ProductDetails() {
+  const { t } = useLanguage();
   const { idOrSlug } = useParams();
   const { addToCart } = useCart();
   const [product, setProduct] = useState(null);
@@ -28,7 +30,7 @@ export default function ProductDetails() {
         setActiveImage(productData.primaryImageUrl);
       } catch (error) {
         toast.error(
-          error.response?.data?.message || "Failed to load product details",
+          error.response?.data?.message || t("Unable to load product details"),
         );
       } finally {
         setIsLoading(false);
@@ -36,7 +38,7 @@ export default function ProductDetails() {
     };
 
     fetchProduct();
-  }, [idOrSlug]);
+  }, [idOrSlug, t]);
 
   // حساب المتوسط الجديد محلياً لتحديث النجوم فوراً عند الإضافة أو الحذف
   const calculateAverageRating = (commentsList) => {
@@ -53,7 +55,7 @@ export default function ProductDetails() {
     e.preventDefault();
 
     if (!commentText.trim()) {
-      return toast.error("يرجى كتابة نص التعليق أولاً");
+      return toast.error(t("Please write your review first."));
     }
 
     try {
@@ -77,13 +79,13 @@ export default function ProductDetails() {
 
       setCommentText("");
       setRating(5);
-      toast.success("تمت إضافة تقييمك بنجاح!");
+      toast.success(t("Your review was added successfully!"));
     } catch (error) {
       if (error.response?.status === 401) {
-        toast.error("يرجى تسجيل الدخول أولاً لإضافة تقييم");
+        toast.error(t("Please log in first to leave a review."));
       } else {
         toast.error(
-          error.response?.data?.message || "حدث خطأ أثناء إضافة التعليق",
+          error.response?.data?.message || t("An error occurred while adding your review."),
         );
       }
     } finally {
@@ -105,10 +107,10 @@ export default function ProductDetails() {
         averageRating: calculateAverageRating(updatedComments),
       }));
 
-      toast.success("تم حذف التعليق بنجاح");
+      toast.success(t("Comment deleted successfully."));
     } catch (error) {
       toast.error(
-        error.response?.data?.message || "غير مصرح لك بحذف هذا التعليق",
+        error.response?.data?.message || t("You are not authorized to delete this comment."),
       );
     }
   };
@@ -125,13 +127,13 @@ export default function ProductDetails() {
     return (
       <div className="text-center py-20">
         <h2 className="text-2xl font-bold text-[#1A1A1A] mb-4">
-          المنتج غير موجود
+          {t("Product not found")}
         </h2>
         <Link
           to="/"
           className="inline-block bg-[#03382E] text-white px-6 py-2.5 rounded-sm font-medium hover:bg-black transition"
         >
-          العودة للرئيسية
+          {t("Return to home")}
         </Link>
       </div>
     );
@@ -171,7 +173,7 @@ export default function ProductDetails() {
       {/* شريط المسار (Breadcrumbs) */}
       <nav className="text-sm text-[#6B7280] mb-8 flex items-center gap-2">
         <Link to="/" className="hover:text-[#03382E] transition">
-          Home
+          {t("Home")}
         </Link>
         <span>/</span>
         {product.category && (
@@ -215,12 +217,12 @@ export default function ProductDetails() {
           <div className="relative flex-grow bg-[#FAF8F6] border border-[#EFE6DD] h-[400px] sm:h-[500px] flex items-center justify-center overflow-hidden">
             {product.isFeatured && (
               <span className="absolute top-4 left-4 z-10 bg-[#F5EBE6] text-[#1A1A1A] text-xs font-bold px-3 py-1.5 tracking-wider uppercase">
-                ⭐ Featured
+                ⭐ {t("Featured")}
               </span>
             )}
             {hasDiscount && (
               <span className="absolute top-4 right-4 z-10 bg-[#E63946] text-white text-xs font-bold px-3 py-1.5 uppercase">
-                -{discountPercentage}% Sale
+                -{discountPercentage}% {t("Sale")}
               </span>
             )}
             <img
@@ -235,7 +237,7 @@ export default function ProductDetails() {
         <div className="lg:col-span-5 flex flex-col">
           {/* القسم */}
           <span className="text-xs font-semibold uppercase tracking-widest text-[#6B7280] mb-2">
-            {product.category?.name || "Uncategorized"}
+            {product.category?.name || t("Uncategorized")}
           </span>
 
           {/* اسم المنتج */}
@@ -253,13 +255,13 @@ export default function ProductDetails() {
             </div>
             <span className="text-gray-300">|</span>
             <span className="text-sm text-[#6B7280]">
-              {product.comments?.length || 0} Reviews
+              {product.comments?.length || 0} {t("Reviews")}
             </span>
             {product.sold > 0 && (
               <>
                 <span className="text-gray-300">|</span>
                 <span className="text-sm text-[#03382E] font-medium">
-                  {product.sold} Sold
+                  {product.sold} {t("Sold")}
                 </span>
               </>
             )}
@@ -286,7 +288,7 @@ export default function ProductDetails() {
           {/* الوصف */}
           <div className="mb-6">
             <h3 className="text-sm font-bold text-[#1A1A1A] uppercase tracking-wider mb-2">
-              Description
+              {t("Description")}
             </h3>
             <p
               className="text-[#6B7280] leading-relaxed text-sm sm:text-base"
@@ -301,12 +303,12 @@ export default function ProductDetails() {
             {product.quantityOnHand > 0 ? (
               <div className="flex items-center gap-2 text-sm text-[#03382E] font-medium">
                 <span className="w-2.5 h-2.5 rounded-full bg-[#03382E]"></span>
-                متوفر في المخزون ({product.quantityOnHand} قطعة متاحة)
+                {t("Available in stock")} ({product.quantityOnHand} {t("pieces available")})
               </div>
             ) : (
               <div className="flex items-center gap-2 text-sm text-[#E63946] font-medium">
                 <span className="w-2.5 h-2.5 rounded-full bg-[#E63946]"></span>
-                نفذت الكمية (Out of Stock)
+                {t("Out of stock")}
               </div>
             )}
           </div>
@@ -342,11 +344,11 @@ export default function ProductDetails() {
                 type="button"
                 onClick={() => {
                   addToCart(product, quantity);
-                  toast.success(`Added ${quantity} item(s) to bag!`);
+                  toast.success(`${t("Added")} ${quantity} ${t("item(s)")} ${t("to bag!")}`);
                 }}
                 className="flex-grow bg-[#03382E] hover:bg-black text-white font-bold py-3.5 px-6 transition duration-300 uppercase tracking-wider text-sm"
               >
-                Add to Bag
+                {t("Add to Bag")}
               </button>
             </div>
           )}
@@ -356,19 +358,19 @@ export default function ProductDetails() {
       {/* القسم السفلي: التعليقات والمراجعات (Reviews & Comments) */}
       <div className="pt-12">
         <h2 className="text-2xl font-bold text-[#1A1A1A] mb-8">
-          Customer Reviews ({product.comments?.length || 0})
+          {t("Customer Reviews")} ({product.comments?.length || 0})
         </h2>
 
         {/* فورم إضافة تعليق وتقييم جديد */}
         <div className="mb-10 p-6 border border-[#EFE6DD] bg-[#FAF8F6]">
           <h3 className="text-lg font-bold text-[#1A1A1A] mb-4">
-            أضف تقييمك وتعليقك
+            {t("Add your review")}
           </h3>
           <form onSubmit={handleAddComment} className="space-y-4">
             {/* اختيار النجوم */}
             <div className="flex flex-col sm:flex-row sm:items-center gap-3">
               <span className="text-sm font-semibold text-[#1A1A1A]">
-                تقييمك للمنتج:
+                {t("Your rating:")}
               </span>
               <div className="flex items-center gap-1">
                 {[1, 2, 3, 4, 5].map((star) => (
@@ -403,7 +405,7 @@ export default function ProductDetails() {
             <div>
               <textarea
                 rows="3"
-                placeholder="اكتب رأيك وتجربتك مع المنتج هنا..."
+                placeholder={t("Write your review and experience with this product here...")}
                 value={commentText}
                 onChange={(e) => setCommentText(e.target.value)}
                 className="w-full p-3 border border-[#EFE6DD] bg-white text-sm text-[#1A1A1A] placeholder:text-gray-400 focus:outline-none focus:border-[#03382E] focus:ring-1 focus:ring-[#C5A368] rounded-sm"
@@ -416,7 +418,7 @@ export default function ProductDetails() {
               disabled={isSubmitting}
               className="bg-[#03382E] hover:bg-black disabled:opacity-50 text-white font-bold py-2.5 px-8 transition duration-300 uppercase tracking-wider text-xs rounded-sm"
             >
-              {isSubmitting ? "جاري الإرسال..." : "إرسال التقييم"}
+              {isSubmitting ? t("Sending...") : t("Send review")}
             </button>
           </form>
         </div>
@@ -436,12 +438,12 @@ export default function ProductDetails() {
                         comment.user?.profileImage ||
                         "https://via.placeholder.com/40"
                       }
-                      alt={comment.user?.name || "User"}
+                      alt={comment.user?.name || t("User")}
                       className="w-10 h-10 rounded-full object-cover border border-[#EFE6DD]"
                     />
                     <div>
                       <h4 className="text-sm font-bold text-[#1A1A1A]">
-                        {comment.user?.name || "Anonymous Customer"}
+                        {comment.user?.name || t("Anonymous Customer")}
                       </h4>
                       <span className="text-xs text-[#6B7280]">
                         {comment.createdAt
@@ -466,7 +468,7 @@ export default function ProductDetails() {
                       <button
                         type="button"
                         onClick={() => handleDeleteComment(comment._id)}
-                        title="حذف التعليق"
+                        title={t("Delete comment")}
                         className="text-gray-400 hover:text-[#E63946] transition"
                       >
                         <svg
@@ -500,7 +502,7 @@ export default function ProductDetails() {
         ) : (
           <div className="p-10 border border-[#EFE6DD] bg-[#FAF8F6] text-center">
             <p className="text-[#6B7280] text-sm">
-              لا توجد تعليقات على هذا المنتج حتى الآن.
+              {t("No reviews for this product yet.")}
             </p>
           </div>
         )}

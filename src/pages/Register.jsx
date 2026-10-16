@@ -6,24 +6,25 @@ import * as z from "zod";
 import toast from "react-hot-toast";
 import axiosInstance from "../api/axiosInstance";
 import { useAuthStore } from "../store/useAuthStore";
-
-const registerSchema = z
-  .object({
-    name: z.string().trim().min(3, "Name must be at least 3 characters"),
-    email: z.string().min(1, "Email is required").email("Invalid email address"),
-    phoneNumber: z.string().trim().min(8, "Enter a valid phone number"),
-    password: z.string().min(6, "Password must be at least 6 characters"),
-    confirmPassword: z.string().min(1, "Please confirm your password"),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords do not match",
-    path: ["confirmPassword"],
-  });
+import { useLanguage } from "../context/LanguageState";
 
 export default function Register() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const login = useAuthStore((state) => state.login);
   const [isLoading, setIsLoading] = useState(false);
+  const registerSchema = z
+    .object({
+      name: z.string().trim().min(3, t("Name must be at least 3 characters")),
+      email: z.string().min(1, t("Email is required")).email(t("Invalid email address")),
+      phoneNumber: z.string().trim().min(8, t("Enter a valid phone number")),
+      password: z.string().min(6, t("Password must be at least 6 characters")),
+      confirmPassword: z.string().min(1, t("Please confirm your password")),
+    })
+    .refine((data) => data.password === data.confirmPassword, {
+      message: t("Passwords do not match"),
+      path: ["confirmPassword"],
+    });
   const {
     register,
     handleSubmit,
@@ -51,13 +52,13 @@ export default function Register() {
       delete safeUser.passwordResetToken;
       delete safeUser.passwordResetExpires;
       login(safeUser, token);
-      toast.success("Account created successfully!");
+      toast.success(t("Account created successfully!"));
       navigate("/");
     } catch (error) {
       toast.error(
         error.response?.data?.message ||
           error.message ||
-          "Registration failed. Please try again.",
+          t("Registration failed. Please try again."),
       );
     } finally {
       setIsLoading(false);
@@ -71,10 +72,10 @@ export default function Register() {
     <div className="flex min-h-[75vh] items-center justify-center py-10">
       <div className="w-full max-w-md border border-[#EFE6DD] bg-white p-8 shadow-sm">
         <h1 className="mb-2 text-center text-2xl font-bold text-[#1A1A1A]">
-          Create Your Account
+          {t("Create Your Account")}
         </h1>
         <p className="mb-6 text-center text-sm text-gray-500">
-          Join FACES to place and track your orders.
+          {t("Join SheGlam to place and track your orders.")}
         </p>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -83,7 +84,7 @@ export default function Register() {
               htmlFor="register-name"
               className="mb-1.5 block text-sm font-semibold text-gray-700"
             >
-              Full Name
+              {t("Full Name")}
             </label>
             <input
               id="register-name"
@@ -102,7 +103,7 @@ export default function Register() {
               htmlFor="register-email"
               className="mb-1.5 block text-sm font-semibold text-gray-700"
             >
-              Email Address
+              {t("Email Address")}
             </label>
             <input
               id="register-email"
@@ -123,7 +124,7 @@ export default function Register() {
               htmlFor="register-phone"
               className="mb-1.5 block text-sm font-semibold text-gray-700"
             >
-              Phone Number
+              {t("Phone Number")}
             </label>
             <input
               id="register-phone"
@@ -144,7 +145,7 @@ export default function Register() {
               htmlFor="register-password"
               className="mb-1.5 block text-sm font-semibold text-gray-700"
             >
-              Password
+              {t("Password")}
             </label>
             <input
               id="register-password"
@@ -165,7 +166,7 @@ export default function Register() {
               htmlFor="register-confirm-password"
               className="mb-1.5 block text-sm font-semibold text-gray-700"
             >
-              Confirm Password
+              {t("Confirm Password")}
             </label>
             <input
               id="register-confirm-password"
@@ -186,17 +187,17 @@ export default function Register() {
             disabled={isLoading}
             className="flex w-full justify-center bg-[#03382E] px-4 py-3 font-semibold text-white transition hover:bg-[#022D25] disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {isLoading ? "Creating account..." : "Create Account"}
+            {isLoading ? t("Creating account...") : t("Create Account")}
           </button>
         </form>
 
         <p className="mt-5 text-center text-sm text-gray-500">
-          Already have an account?{" "}
+          {t("Already have an account?")}{" "}
           <Link
             to="/login"
             className="font-semibold text-[#03382E] hover:text-[#C5A368] hover:underline"
           >
-            Log in
+            {t("Log in")}
           </Link>
         </p>
       </div>

@@ -1,11 +1,13 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../store/useAuthStore";
 import { useCart } from "../context/CartContext";
+import { useLanguage } from "../context/LanguageState";
 
 export default function Navbar() {
   const navigate = useNavigate();
   const { isAuthenticated, user, logout } = useAuthStore();
   const { cartCount } = useCart();
+  const { language, setLanguage, t } = useLanguage();
 
   const handleLogout = () => {
     logout();
@@ -17,7 +19,7 @@ export default function Navbar() {
       <div className="container mx-auto flex justify-between items-center">
         {/* Logo */}
         <Link to="/" className="text-2xl font-bold tracking-[0.2em] text-white">
-          FACES
+          SheGlam
         </Link>
 
         {/* Navigation Links */}
@@ -25,7 +27,7 @@ export default function Navbar() {
           <Link
             to="/cart"
             className="flex items-center gap-2 text-white/90"
-            aria-label={`Shopping bag: ${cartCount} items`}
+            aria-label={`${t("Shopping bag")}: ${cartCount} ${t("items")}`}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -42,19 +44,27 @@ export default function Navbar() {
                 d="M5 8h14l1 13H4L5 8zm4 0a3 3 0 016 0"
               />
             </svg>
-            <span>Bag ({cartCount})</span>
+            <span>{t("Bag")} ({cartCount})</span>
           </Link>
+          <button
+            type="button"
+            onClick={() => setLanguage(language === "en" ? "ar" : "en")}
+            className="rounded-sm border border-white/40 px-3 py-2 text-sm font-semibold text-white hover:bg-white/10"
+            aria-label={`${t("Language:")} ${language === "en" ? t("Arabic") : t("English")}`}
+          >
+            {language === "en" ? "العربية" : "English"}
+          </button>
           {isAuthenticated ? (
             <>
               {user?.profileImage && (
                 <img
                   src={user.profileImage}
-                  alt="profile"
+                  alt={t("Profile")}
                   className="w-8 h-8 rounded-full object-cover"
                 />
               )}
               <span className="font-medium text-white/90">
-                Welcome, {user?.name?.split(" ")[0]}
+                {t("Welcome,")} {user?.name?.split(" ")[0]}
               </span>
 
               {user?.role === "moderator" && (
@@ -62,13 +72,13 @@ export default function Navbar() {
                   to="/dashboard"
                   className="text-white/80 hover:text-[#C5A368] font-semibold"
                 >
-                  Dashboard
+                  {t("Dashboard")}
                 </Link>
               )}
 
               <details className="group relative">
                 <summary className="flex cursor-pointer list-none items-center gap-2 text-white/90 hover:text-white [&::-webkit-details-marker]:hidden">
-                  Account
+                  {t("Account")}
                   <span
                     aria-hidden="true"
                     className="text-xs transition-transform group-open:rotate-180"
@@ -81,13 +91,13 @@ export default function Navbar() {
                     to="/profile"
                     className="block px-4 py-2 text-sm hover:bg-[#F5EBE6]"
                   >
-                    Profile
+                    {t("Profile")}
                   </Link>
                   <Link
                     to="/orders"
                     className="block px-4 py-2 text-sm hover:bg-[#F5EBE6]"
                   >
-                    My Orders
+                    {t("My Orders")}
                   </Link>
                 </div>
               </details>
@@ -95,7 +105,7 @@ export default function Navbar() {
                 onClick={handleLogout}
                 className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-sm transition"
               >
-                Logout
+                {t("Logout")}
               </button>
             </>
           ) : (
@@ -104,13 +114,13 @@ export default function Navbar() {
                 to="/login"
                 className="text-white/80 hover:text-white font-medium"
               >
-                Login
+                {t("Login")}
               </Link>
               <Link
                 to="/register"
                 className="bg-white text-[#03382E] hover:bg-[#F5EBE6] px-4 py-2 rounded-sm font-semibold transition"
               >
-                Sign Up
+                {t("Sign Up")}
               </Link>
             </>
           )}
