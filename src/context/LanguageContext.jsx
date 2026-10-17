@@ -26,6 +26,8 @@ const arabicTranslations = {
   "No products match your search.": "لا توجد منتجات مطابقة لبحثك.",
   "Add to bag": "أضف إلى السلة",
   "added to bag!": "تمت إضافته إلى السلة!",
+  "Product images": "صور المنتج",
+  "Show image": "عرض الصورة",
   "Login to Your Account": "سجل الدخول إلى حسابك",
   "Sign in or create an account to continue shopping.": "سجّل الدخول أو أنشئ حساباً لمتابعة التسوق.",
   "Email Address": "البريد الإلكتروني",

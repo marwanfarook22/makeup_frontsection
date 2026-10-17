@@ -108,29 +108,47 @@ const ProductCard = ({ product, variant = "grid" }) => {
       )}
 
       {/* الضغط على الصورة ينقل لصفحة تفاصيل المنتج */}
-      <Link
-        to={productUrl}
-        className="relative block aspect-[4/5] w-full overflow-hidden bg-[#FAF8F6]"
-      >
-        <img
-          src={allImages[currentImgIndex]}
-          alt={product.name}
-          className="h-full w-full object-contain p-2 transition-all duration-300 hover:scale-105 sm:p-3"
-        />
+      <div className="relative aspect-[4/5] w-full overflow-hidden bg-[#FAF8F6]">
+        <Link to={productUrl} className="absolute inset-0 block">
+          <img
+            src={allImages[currentImgIndex]}
+            alt={product.name}
+            className="h-full w-full object-contain p-2 transition-all duration-300 hover:scale-105 sm:p-3"
+          />
+        </Link>
 
-        {isHovered && allImages.length > 1 && (
-          <div className="absolute bottom-2 flex gap-1 z-10">
+        {allImages.length > 1 && (
+          <div
+            role="group"
+            aria-label={t("Product images")}
+            className="absolute bottom-2 left-1/2 z-10 flex max-w-[90%] -translate-x-1/2 flex-wrap items-center justify-center gap-0.5 sm:bottom-3 sm:gap-1"
+          >
             {allImages.map((_, idx) => (
-              <div
+              <button
                 key={idx}
-                className={`h-1.5 w-1.5 rounded-full ${
-                  idx === currentImgIndex ? "bg-[#C5A368] w-3" : "bg-gray-300"
-                } transition-all duration-300`}
-              />
+                type="button"
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  setIsHovered(false);
+                  setCurrentImgIndex(idx);
+                }}
+                aria-label={`${t("Show image")} ${idx + 1}`}
+                aria-pressed={idx === currentImgIndex}
+                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#03382E]"
+              >
+                <span
+                  className={`block h-1.5 rounded-full transition-all duration-200 ${
+                    idx === currentImgIndex
+                      ? "w-3 bg-[#A17D45]"
+                      : "w-1.5 bg-gray-400 hover:bg-[#03382E]"
+                  }`}
+                />
+              </button>
             ))}
           </div>
         )}
-      </Link>
+      </div>
 
       <div className="p-4 flex flex-col flex-grow">
         <span className="text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wider">
