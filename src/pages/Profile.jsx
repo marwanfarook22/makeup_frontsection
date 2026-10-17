@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
+import { ImagePlus } from "lucide-react";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 import axiosInstance from "../api/axiosInstance";
@@ -10,8 +11,24 @@ export default function Profile() {
   const { user, updateUser } = useAuthStore();
   const [isLoading, setIsLoading] = useState(false);
   const [imageFile, setImageFile] = useState(null);
-  const [imagePreview, setImagePreview] = useState("");
   const fileInputRef = useRef(null);
+  const imagePreview = useMemo(
+    () => (imageFile ? URL.createObjectURL(imageFile) : ""),
+    [imageFile],
+  );
+
+  useEffect(
+    () => () => {
+      if (imagePreview) URL.revokeObjectURL(imagePreview);
+    },
+    [imagePreview],
+  );
+
+  useEffect(() => {
+    if (!imageFile && fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  }, [imageFile]);
 
   // استخراج setValue لملء الخانات برمجياً
   const {
@@ -30,11 +47,22 @@ export default function Profile() {
   }, [user, setValue]);
 
   const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setImageFile(file);
-      setImagePreview(URL.createObjectURL(file));
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      toast.error(t("Choose a JPG, PNG, or WEBP image."));
+      e.target.value = "";
+      return;
     }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error(t("Image size must not exceed 5 MB."));
+      e.target.value = "";
+      return;
+    }
+
+    setImageFile(file);
   };
 
   const onSubmit = async (data) => {
@@ -67,6 +95,7 @@ export default function Profile() {
       const updatedUserData =
         response.data.data || response.data.user || response.data;
       updateUser(updatedUserData);
+      setImageFile(null);
 
       toast.success(t("Profile updated successfully!"));
     } catch (error) {
@@ -89,32 +118,43 @@ export default function Profile() {
         </h2>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          {/* قسم الصورة الشخصية */}
-          <div className="flex flex-col items-center mb-6">
-            <div
-              className="relative group cursor-pointer"
-              onClick={() => fileInputRef.current.click()}
+          <div className="flex flex-col items-center gap-3 border-b border-[#F0EBE7] pb-6">
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="group relative h-28 w-28 overflow-hidden rounded-full border-2 border-[#EFE6DD] bg-[#FBF8F6] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C5A368]"
+              aria-label={t("Change profile photo")}
             >
               <img
                 src={
                   imagePreview ||
                   user?.profileImage ||
-                  "https://via.placeholder.com/150"
+                  "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png"
                 }
-                alt="Profile Preview"
-                className="w-32 h-32 rounded-full object-cover border-4 border-gray-200"
+                alt={t("Profile photo")}
+                className="h-full w-full object-cover"
               />
-              <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
-                <span className="text-white text-sm font-semibold">{t("Change")}</span>
-              </div>
-            </div>
+              <span className="absolute inset-0 flex items-center justify-center gap-1 bg-black/55 text-xs font-semibold text-white opacity-0 transition group-hover:opacity-100 group-focus-visible:opacity-100">
+                <ImagePlus size={16} aria-hidden="true" />
+                {t("Change")}
+              </span>
+            </button>
             <input
               type="file"
-              accept="image/*"
-              className="hidden"
+              accept="image/jpeg,image/png,image/webp"
+              className="sr-only"
               ref={fileInputRef}
               onChange={handleImageChange}
+              aria-label={t("Choose a profile photo")}
             />
+            <p className="text-center text-xs text-gray-500">
+              {t("JPG, PNG, or WEBP; up to 5 MB.")}
+            </p>
+            {imageFile && (
+              <p className="text-xs font-medium text-[#28704D]">
+                {t("New photo selected. Save changes to update your profile.")}
+              </p>
+            )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

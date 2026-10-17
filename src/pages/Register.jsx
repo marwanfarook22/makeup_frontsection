@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { ImagePlus, X } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -14,6 +15,8 @@ export default function Register() {
   const { t } = useLanguage();
   const login = useAuthStore((state) => state.login);
   const [isLoading, setIsLoading] = useState(false);
+  const [profileImage, setProfileImage] = useState(null);
+  const fileInputRef = useRef(null);
   const registerSchema = z
     .object({
       name: z.string().trim().min(3, t("Name must be at least 3 characters")),
@@ -32,15 +35,47 @@ export default function Register() {
     formState: { errors },
   } = useForm({ resolver: zodResolver(registerSchema) });
 
+  const imagePreview = useMemo(
+    () => (profileImage ? URL.createObjectURL(profileImage) : ""),
+    [profileImage],
+  );
+
+  useEffect(
+    () => () => {
+      if (imagePreview) URL.revokeObjectURL(imagePreview);
+    },
+    [imagePreview],
+  );
+
+  const handleImageChange = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      toast.error(t("Choose a JPG, PNG, or WEBP image."));
+      event.target.value = "";
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error(t("Image size must not exceed 5 MB."));
+      event.target.value = "";
+      return;
+    }
+
+    setProfileImage(file);
+  };
+
   const onSubmit = async (data) => {
     try {
       setIsLoading(true);
-      const userData = {
-        name: data.name,
-        email: data.email,
-        phoneNumber: data.phoneNumber,
-        password: data.password,
-      };
+      const userData = new FormData();
+      userData.append("name", data.name);
+      userData.append("email", data.email);
+      userData.append("phoneNumber", data.phoneNumber);
+      userData.append("password", data.password);
+      if (profileImage) userData.append("profileImage", profileImage);
+
       const response = await axiosInstance.post("/auth/signUp", userData);
       const { token, user } = response.data.data || response.data;
 
@@ -80,6 +115,48 @@ export default function Register() {
         </p>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <div className="flex flex-col items-center gap-3 pb-2">
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="group relative h-24 w-24 overflow-hidden rounded-full border-2 border-dashed border-[#D8C9BB] bg-[#FBF8F6] transition hover:border-[#03382E] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C5A368]"
+              aria-label={t("Add a profile photo")}
+            >
+              {imagePreview ? (
+                <img src={imagePreview} alt={t("Profile photo preview")} className="h-full w-full object-cover" />
+              ) : (
+                <span className="flex h-full flex-col items-center justify-center gap-1 text-[#8C5D4B]">
+                  <ImagePlus size={23} aria-hidden="true" />
+                  <span className="text-[10px] font-semibold">{t("Add photo")}</span>
+                </span>
+              )}
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="sr-only"
+              onChange={handleImageChange}
+              aria-label={t("Profile photo (optional)")}
+            />
+            <p className="text-center text-xs text-gray-500">
+              {t("Profile photo (optional) · JPG, PNG, or WEBP, up to 5 MB")}
+            </p>
+            {profileImage && (
+              <button
+                type="button"
+                onClick={() => {
+                  setProfileImage(null);
+                  if (fileInputRef.current) fileInputRef.current.value = "";
+                }}
+                className="inline-flex items-center gap-1 text-xs font-medium text-gray-500 hover:text-red-600"
+              >
+                <X size={14} aria-hidden="true" />
+                {t("Remove photo")}
+              </button>
+            )}
+          </div>
+
           <div>
             <label
               htmlFor="register-name"
