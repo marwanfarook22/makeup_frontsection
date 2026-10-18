@@ -78,7 +78,7 @@ export default function Navbar() {
                 <span className="max-w-36 truncate font-medium text-white/90">
                   {t("Welcome,")} {user?.name?.split(" ")[0]}
                 </span>
-                {user?.role === "moderator" && (
+                {["admin", "moderator"].includes(user?.role) && (
                   <Link
                     to="/dashboard"
                     className="font-semibold text-white/80 hover:text-[#C5A368]"
@@ -186,7 +186,7 @@ export default function Navbar() {
                 <span className="px-3 py-2 text-sm font-medium text-white/70">
                   {t("Welcome,")} {user?.name?.split(" ")[0]}
                 </span>
-                {user?.role === "moderator" && (
+                {["admin", "moderator"].includes(user?.role) && (
                   <Link
                     to="/dashboard"
                     onClick={closeMenu}

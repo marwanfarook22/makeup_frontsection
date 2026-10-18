@@ -12,7 +12,6 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Profile from "./pages/Profile";
 import ForgotPassword from "./pages/ForgotPassword";
-import ResetPassword from "./pages/ResetPassword";
 import Home from "./pages/Home";
 import ProductDetails from "./pages/ProudectDetails";
 import Cart from "./pages/Cart";
@@ -115,7 +114,10 @@ function App() {
                 }
               />
               <Route path="/forgot-password" element={<ForgotPassword />} />
-              <Route path="/reset-password/:token" element={<ResetPassword />} />
+              <Route
+                path="/reset-password/:token"
+                element={<Navigate to="/forgot-password" replace />}
+              />
             </Routes>
           </main>
           <Toaster position="top-center" reverseOrder={false} />

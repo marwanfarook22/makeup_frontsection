@@ -7,6 +7,7 @@ import toast from "react-hot-toast";
 import axiosInstance from "../api/axiosInstance";
 import { useAuthStore } from "../store/useAuthStore";
 import { useLanguage } from "../context/LanguageState";
+import GoogleSignInButton from "../components/GoogleSignInButton";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -128,6 +129,8 @@ export default function Login() {
             )}
           </button>
         </form>
+
+        <GoogleSignInButton />
 
         <div className="mt-4 flex flex-wrap items-center justify-center gap-x-1 text-center text-sm">
           <span className="text-gray-500">{t("Don't have an account? ")}</span>

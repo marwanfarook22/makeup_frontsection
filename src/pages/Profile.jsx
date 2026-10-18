@@ -35,6 +35,7 @@ export default function Profile() {
     register,
     handleSubmit,
     setValue,
+    formState: { errors },
   } = useForm();
 
   // هذا الجزء (useEffect) هو السر: سيقوم بملء الخانات تلقائياً بمجرد فتح الصفحة
@@ -42,7 +43,7 @@ export default function Profile() {
     if (user) {
       setValue("name", user.name || "");
       setValue("email", user.email || "");
-      setValue("phoneNumber", user.phoneNumber || "");
+      setValue("phoneNumber", user.phoneNumber || user.phone || "");
     }
   }, [user, setValue]);
 
@@ -177,9 +178,25 @@ export default function Profile() {
               </label>
               <input
                 type="email"
-                {...register("email")}
+                aria-invalid={Boolean(errors.email)}
+                aria-describedby={errors.email ? "profile-email-error" : "profile-email-hint"}
+                {...register("email", {
+                  validate: (email) =>
+                    email.trim().toLowerCase() === user?.email?.toLowerCase() ||
+                    email.trim().toLowerCase().endsWith("@gmail.com") ||
+                    t("Please use a Gmail address ending in @gmail.com."),
+                })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-200"
               />
+              {errors.email ? (
+                <p id="profile-email-error" role="alert" className="mt-1 text-xs text-red-600">
+                  {errors.email.message}
+                </p>
+              ) : (
+                <p id="profile-email-hint" className="mt-1.5 text-xs leading-5 text-gray-500">
+                  {t("Use an active Gmail address that you can access.")}
+                </p>
+              )}
             </div>
           </div>
 
@@ -194,37 +211,44 @@ export default function Profile() {
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-200"
             />
           </div>
+          <p className="text-xs leading-5 text-gray-500 md:col-span-2">
+            {t("Enter the phone number connected to your WhatsApp account.")}
+          </p>
 
-          <hr className="my-6 border-gray-200" />
-          <h3 className="text-lg font-semibold text-gray-700 mb-4">
-            {t("Change Password (Optional)")}
-          </h3>
+          {user?.authProvider !== "google" && (
+            <>
+              <hr className="my-6 border-gray-200" />
+              <h3 className="text-lg font-semibold text-gray-700 mb-4">
+                {t("Change Password (Optional)")}
+              </h3>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-gray-700 text-sm font-bold mb-2">
-                {t("Current Password")}
-              </label>
-              <input
-                type="password"
-                {...register("oldPassword")}
-                placeholder={t("Leave blank to keep current")}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-200"
-              />
-            </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-gray-700 text-sm font-bold mb-2">
+                    {t("Current Password")}
+                  </label>
+                  <input
+                    type="password"
+                    {...register("oldPassword")}
+                    placeholder={t("Leave blank to keep current")}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-200"
+                  />
+                </div>
 
-            <div>
-              <label className="block text-gray-700 text-sm font-bold mb-2">
-                {t("New Password")}
-              </label>
-              <input
-                type="password"
-                {...register("newPassword")}
-                placeholder={t("New password")}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-200"
-              />
-            </div>
-          </div>
+                <div>
+                  <label className="block text-gray-700 text-sm font-bold mb-2">
+                    {t("New Password")}
+                  </label>
+                  <input
+                    type="password"
+                    {...register("newPassword")}
+                    placeholder={t("New password")}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-200"
+                  />
+                </div>
+              </div>
+            </>
+          )}
 
           <button
             type="submit"

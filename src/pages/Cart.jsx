@@ -6,8 +6,6 @@ import { useCart } from "../context/CartContext";
 import { useAuthStore } from "../store/useAuthStore";
 import { useLanguage } from "../context/LanguageState";
 
-const ADMIN_PHONE = "201020483849";
-
 const paymentLabels = {
   cod: "Cash on Delivery",
   instapay: "InstaPay",
@@ -19,49 +17,18 @@ const getItemPrice = (product) =>
     ? product.salesPrice
     : product.price;
 
-function sendOrderToWhatsApp(bill) {
-  const itemsList = bill.items
-    .map(
-      (item, index) =>
-        `${index + 1}. *${item.name}* (الكمية: ${item.quantity}) - ${
-          item.price * item.quantity
-        } EGP`,
-    )
-    .join("\n");
-
-  const message = `مرحباً، أود تأكيد طلبي الجديد من المتجر 🛍️
-
-*رقم الطلب:* #${bill.billNumber}
-*الاسم:* ${bill.customerInfo.name}
-*رقم الهاتف:* ${bill.customerInfo.phone}${
-    bill.customerInfo.secondaryPhone
-      ? `\n*رقم إضافي:* ${bill.customerInfo.secondaryPhone}`
-      : ""
-  }
-
-*📍 عنوان التوصيل:*
-${bill.shippingAddress.governorate} - ${bill.shippingAddress.city}
-${bill.shippingAddress.detailedAddress}
-
-*📦 المنتجات المطلوبة:*
-${itemsList}
-
-*💳 طريقة الدفع:* ${paymentLabels[bill.paymentMethod]}
-*💰 الإجمالي المطلوب:* *${bill.totalAmount} EGP*`;
-
-  return `https://wa.me/${ADMIN_PHONE}?text=${encodeURIComponent(message)}`;
-}
-
 export default function Cart() {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const { cartItems, updateQuantity, removeFromCart, clearCart } = useCart();
-  const { isAuthenticated, user } = useAuthStore();
+  const { isAuthenticated, user, updateUser } = useAuthStore();
+  const savedPhone = user?.phone || user?.phoneNumber || "";
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     governorate: "",
     city: "",
     detailedAddress: "",
+    phone: savedPhone,
     secondaryPhone: "",
     paymentMethod: "cod",
   });
@@ -100,13 +67,11 @@ export default function Cart() {
       return;
     }
 
-    if (!user?.phoneNumber) {
-      toast.error(t("Please add a phone number to your account before confirming your order."));
+    if (!savedPhone && !formData.phone.trim()) {
+      toast.error(t("Please enter your phone number to complete your order."));
       return;
     }
 
-    const whatsappWindow = window.open("about:blank", "_blank");
-    if (whatsappWindow) whatsappWindow.opener = null;
     setIsSubmitting(true);
 
     try {
@@ -121,6 +86,7 @@ export default function Cart() {
           quantity,
         })),
         paymentMethod: formData.paymentMethod,
+        ...(!savedPhone && { phone: formData.phone.trim() }),
         secondaryPhone: formData.secondaryPhone.trim(),
       });
 
@@ -129,21 +95,31 @@ export default function Cart() {
         throw new Error(t("The server returned an incomplete response after creating the order."));
       }
 
-      clearCart();
-      const whatsappUrl = sendOrderToWhatsApp(bill);
-      if (whatsappWindow && !whatsappWindow.closed) {
-        whatsappWindow.location.href = whatsappUrl;
-      } else {
-        window.open(whatsappUrl, "_blank");
+      if (!savedPhone) {
+        updateUser({
+          ...user,
+          phone: formData.phone.trim(),
+          phoneNumber: formData.phone.trim(),
+        });
       }
+      clearCart();
       toast.success(
-        t("Your order {number} was placed successfully.").replace(
+        t(
+          response.data.whatsappNotification?.sent
+            ? "Your order {number} was placed and sent to WhatsApp for confirmation."
+            : "Your order {number} was placed successfully.",
+        ).replace(
           "{number}",
           bill.billNumber,
         ),
       );
+      if (!response.data.whatsappNotification?.sent) {
+        toast.error(
+          response.data.whatsappNotification?.message ||
+            t("The order was placed, but its WhatsApp confirmation could not be sent."),
+        );
+      }
     } catch (error) {
-      if (whatsappWindow && !whatsappWindow.closed) whatsappWindow.close();
       toast.error(
         error.response?.data?.message ||
           error.message ||
@@ -272,7 +248,8 @@ export default function Cart() {
               </h2>
               {isAuthenticated ? (
                 <p className="mt-2 text-sm text-gray-600">
-                  {user?.name} · {user?.phoneNumber}
+                  {user?.name}
+                  {savedPhone ? ` · ${savedPhone}` : ""}
                 </p>
               ) : (
                 <p className="mt-2 text-sm text-[#9B2C2C]">
@@ -318,6 +295,24 @@ export default function Cart() {
                   autoComplete="street-address"
                   className="w-full border border-[#D9D1C7] px-3 py-2.5 text-[#1A1A1A] focus:border-[#03382E] focus:outline-none"
                 />
+              </label>
+              <label className="space-y-1 text-sm font-medium text-gray-700 sm:col-span-2">
+                {t("Phone Number")}
+                {savedPhone ? (
+                  <p className="border border-[#D9D1C7] bg-[#FAF8F6] px-3 py-2.5 text-[#03382E]">
+                    {savedPhone}
+                  </p>
+                ) : (
+                  <input
+                    type="tel"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    required
+                    autoComplete="tel"
+                    className="w-full border border-[#D9D1C7] px-3 py-2.5 text-[#1A1A1A] focus:border-[#03382E] focus:outline-none"
+                  />
+                )}
               </label>
               <label className="space-y-1 text-sm font-medium text-gray-700 sm:col-span-2">
                 {t("Additional phone number (optional)")}
@@ -367,22 +362,12 @@ export default function Cart() {
               disabled={
                 isSubmitting ||
                 !isAuthenticated ||
-                hasUnavailableItems ||
-                !user?.phoneNumber
+                hasUnavailableItems
               }
               className="w-full bg-[#03382E] px-5 py-3.5 font-bold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {isSubmitting ? t("Submitting order...") : t("Confirm order via WhatsApp")}
+              {isSubmitting ? t("Submitting order...") : t("Place order")}
             </button>
-            {isAuthenticated && !user?.phoneNumber && (
-              <p className="text-sm text-[#9B2C2C]">
-                {t("Add your phone number from")}{" "}
-                <Link to="/profile" className="font-semibold underline">
-                  {t("your profile page")}
-                </Link>{" "}
-                {t("before confirming your order.")}
-              </p>
-            )}
           </form>
         </div>
       )}

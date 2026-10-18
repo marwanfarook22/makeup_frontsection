@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ImagePlus, X } from "lucide-react";
+import { ImagePlus, MessageCircle, X } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -8,6 +8,7 @@ import toast from "react-hot-toast";
 import axiosInstance from "../api/axiosInstance";
 import { useAuthStore } from "../store/useAuthStore";
 import { useLanguage } from "../context/LanguageState";
+import GoogleSignInButton from "../components/GoogleSignInButton";
 
 export default function Register() {
   const navigate = useNavigate();
@@ -20,7 +21,14 @@ export default function Register() {
   const registerSchema = z
     .object({
       name: z.string().trim().min(3, t("Name must be at least 3 characters")),
-      email: z.string().min(1, t("Email is required")).email(t("Invalid email address")),
+      email: z
+        .string()
+        .trim()
+        .min(1, t("Email is required"))
+        .email(t("Invalid email address"))
+        .refine((email) => email.toLowerCase().endsWith("@gmail.com"), {
+          message: t("Please use a Gmail address ending in @gmail.com."),
+        }),
       phoneNumber: z.string().trim().min(8, t("Enter a valid phone number")),
       password: z.string().min(6, t("Password must be at least 6 characters")),
       confirmPassword: z.string().min(1, t("Please confirm your password")),
@@ -87,6 +95,10 @@ export default function Register() {
       delete safeUser.password;
       delete safeUser.passwordResetToken;
       delete safeUser.passwordResetExpires;
+      delete safeUser.resetPasswordOtp;
+      delete safeUser.resetPasswordExpires;
+      delete safeUser.resetPasswordOtpSentAt;
+      delete safeUser.resetPasswordOtpAttempts;
       login(safeUser, token);
       toast.success(t("Account created successfully!"));
       navigate(location.state?.from || "/", { replace: true });
@@ -195,6 +207,9 @@ export default function Register() {
                 {errors.email.message}
               </p>
             )}
+            <p className="mt-1.5 text-xs leading-5 text-gray-500">
+              {t("Use an active Gmail address that you can access.")}
+            </p>
           </div>
 
           <div>
@@ -216,6 +231,10 @@ export default function Register() {
                 {errors.phoneNumber.message}
               </p>
             )}
+            <p className="mt-1.5 flex items-start gap-1.5 text-xs leading-5 text-gray-500">
+              <MessageCircle size={14} className="mt-0.5 shrink-0 text-[#28704D]" aria-hidden="true" />
+              {t("Enter the phone number connected to your WhatsApp account.")}
+            </p>
           </div>
 
           <div>
@@ -268,6 +287,8 @@ export default function Register() {
             {isLoading ? t("Creating account...") : t("Create Account")}
           </button>
         </form>
+
+        <GoogleSignInButton />
 
         <p className="mt-5 flex flex-wrap items-center justify-center gap-x-1 text-center text-sm text-gray-500">
           {t("Already have an account?")}{" "}

@@ -72,7 +72,7 @@ function Panel({ children }) {
 export default function Dashboard() {
   const { t } = useLanguage();
   const { isAuthenticated, user } = useAuthStore();
-  const isModerator = user?.role === "moderator";
+  const canAccessDashboard = ["admin", "moderator"].includes(user?.role);
   const canManageRoles = user?.role === "moderator";
   const [activeSection, setActiveSection] = useState("overview");
   const [products, setProducts] = useState([]);
@@ -156,7 +156,7 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
-    if (!isAuthenticated || !isModerator) return undefined;
+    if (!isAuthenticated || !canAccessDashboard) return undefined;
 
     let isActive = true;
 
@@ -185,7 +185,7 @@ export default function Dashboard() {
     return () => {
       isActive = false;
     };
-  }, [isAuthenticated, isModerator, fetchDashboardData, t]);
+  }, [isAuthenticated, canAccessDashboard, fetchDashboardData, t]);
 
   const counts = useMemo(
     () => ({
@@ -198,7 +198,7 @@ export default function Dashboard() {
   );
 
   if (!isAuthenticated) return <Navigate to="/login" replace />;
-  if (!isModerator) return <Navigate to="/" replace />;
+  if (!canAccessDashboard) return <Navigate to="/" replace />;
 
   const resetProductForm = () => {
     setProductForm(blankProduct);
@@ -346,6 +346,18 @@ export default function Dashboard() {
 
   const handleUserSubmit = async (event) => {
     event.preventDefault();
+    const normalizedEmail = userForm.email.trim().toLowerCase();
+    const existingEmail = users
+      .find((account) => account._id === editingUserId)
+      ?.email?.toLowerCase();
+    if (
+      !/^[^\s@]+@gmail\.com$/i.test(normalizedEmail) &&
+      normalizedEmail !== existingEmail
+    ) {
+      toast.error(t("Please use a Gmail address ending in @gmail.com."));
+      return;
+    }
+
     const payload = {
       name: userForm.name.trim(),
       email: userForm.email.trim(),
@@ -1022,6 +1034,9 @@ export default function Dashboard() {
                         setUserForm({ ...userForm, email: event.target.value })
                       }
                     />
+                    <p className="mt-1.5 text-xs leading-5 text-gray-500">
+                      {t("Use an active Gmail address that you can access.")}
+                    </p>
                   </Field>
                   <Field label={t("Phone Number")}>
                     <input
@@ -1036,6 +1051,9 @@ export default function Dashboard() {
                         })
                       }
                     />
+                    <p className="mt-1.5 text-xs leading-5 text-gray-500">
+                      {t("Enter the phone number connected to your WhatsApp account.")}
+                    </p>
                   </Field>
                   {!editingUserId && (
                     <Field label={t("Password")}>
@@ -1111,7 +1129,8 @@ export default function Dashboard() {
                           {account.name}
                         </h3>
                         <p className="text-sm text-gray-500">
-                          {account.email} · {account.phoneNumber}
+                          {account.email} ·{" "}
+                          {account.phoneNumber || account.phone || t("لم يُضف بعد")}
                         </p>
                         <p className="text-xs text-gray-400">
                           {account.role}
