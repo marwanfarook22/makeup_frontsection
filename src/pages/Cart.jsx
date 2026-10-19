@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { CheckCircle2 } from "lucide-react";
 import toast from "react-hot-toast";
 import axiosInstance from "../api/axiosInstance";
 import { useCart } from "../context/CartContext";
@@ -24,6 +25,7 @@ export default function Cart() {
   const { isAuthenticated, user, updateUser } = useAuthStore();
   const savedPhone = user?.phone || user?.phoneNumber || "";
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [phoneAlreadyRegistered, setPhoneAlreadyRegistered] = useState(false);
   const [formData, setFormData] = useState({
     governorate: "",
     city: "",
@@ -45,6 +47,7 @@ export default function Cart() {
 
   const handleChange = (event) => {
     const { name, value } = event.target;
+    if (name === "phone") setPhoneAlreadyRegistered(false);
     setFormData((current) => ({ ...current, [name]: value }));
   };
 
@@ -120,6 +123,11 @@ export default function Cart() {
         );
       }
     } catch (error) {
+      if (error.response?.data?.code === "PHONE_ALREADY_REGISTERED") {
+        setPhoneAlreadyRegistered(true);
+        toast.error(t("This phone number is already registered to another account."));
+        return;
+      }
       toast.error(
         error.response?.data?.message ||
           error.message ||
@@ -310,8 +318,26 @@ export default function Cart() {
                     onChange={handleChange}
                     required
                     autoComplete="tel"
-                    className="w-full border border-[#D9D1C7] px-3 py-2.5 text-[#1A1A1A] focus:border-[#03382E] focus:outline-none"
+                    aria-invalid={phoneAlreadyRegistered}
+                    aria-describedby={
+                      phoneAlreadyRegistered ? "phone-already-registered" : undefined
+                    }
+                    className={`w-full border px-3 py-2.5 text-[#1A1A1A] focus:outline-none ${
+                      phoneAlreadyRegistered
+                        ? "border-red-500 focus:border-red-500"
+                        : "border-[#D9D1C7] focus:border-[#03382E]"
+                    }`}
                   />
+                )}
+                {!savedPhone && phoneAlreadyRegistered && (
+                  <p
+                    id="phone-already-registered"
+                    role="alert"
+                    className="flex items-center gap-1.5 text-sm font-medium text-red-700"
+                  >
+                    <CheckCircle2 size={16} aria-hidden="true" />
+                    {t("This phone number is already registered to another account.")}
+                  </p>
                 )}
               </label>
               <label className="space-y-1 text-sm font-medium text-gray-700 sm:col-span-2">

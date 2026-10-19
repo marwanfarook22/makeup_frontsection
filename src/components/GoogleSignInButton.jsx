@@ -1,16 +1,15 @@
-import { GoogleLogin } from "@react-oauth/google";
+import { GoogleLogin, GoogleOAuthProvider } from "@react-oauth/google";
 import { useLocation, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import axiosInstance from "../api/axiosInstance";
 import { useAuthStore } from "../store/useAuthStore";
 import { useLanguage } from "../context/LanguageState";
 
-export default function GoogleSignInButton() {
+function GoogleSignInContent() {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useLanguage();
   const login = useAuthStore((state) => state.login);
-  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID?.trim();
 
   const handleSuccess = async ({ credential }) => {
     if (!credential) {
@@ -40,17 +39,6 @@ export default function GoogleSignInButton() {
     }
   };
 
-  if (!googleClientId) {
-    return (
-      <p
-        role="status"
-        className="mt-5 rounded-sm border border-[#EFE6DD] bg-[#FAF8F6] p-4 text-center text-sm text-[#8C5D4B]"
-      >
-        {t("Google sign-in is not configured. Set VITE_GOOGLE_CLIENT_ID in the frontend environment and restart the app.")}
-      </p>
-    );
-  }
-
   return (
     <div className="mt-5 rounded-sm border border-[#EFE6DD] bg-[#FAF8F6] p-4">
       <div className="mb-4 flex items-center gap-3 text-xs font-semibold tracking-widest text-[#8C5D4B]">
@@ -73,5 +61,27 @@ export default function GoogleSignInButton() {
         {t("Secure sign-in with Google")}
       </p>
     </div>
+  );
+}
+
+export default function GoogleSignInButton() {
+  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID?.trim();
+  const { t } = useLanguage();
+
+  if (!googleClientId) {
+    return (
+      <p
+        role="status"
+        className="mt-5 rounded-sm border border-[#EFE6DD] bg-[#FAF8F6] p-4 text-center text-sm text-[#8C5D4B]"
+      >
+        {t("Google sign-in is not configured. Set VITE_GOOGLE_CLIENT_ID in the frontend environment and restart the app.")}
+      </p>
+    );
+  }
+
+  return (
+    <GoogleOAuthProvider clientId={googleClientId}>
+      <GoogleSignInContent />
+    </GoogleOAuthProvider>
   );
 }

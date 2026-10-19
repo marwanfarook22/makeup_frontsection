@@ -11,21 +11,9 @@ const ProductCard = ({ product, variant = "grid" }) => {
   const { t } = useLanguage();
   const allImages = [product.primaryImageUrl, ...(product.imagesList || [])];
   const [currentImgIndex, setCurrentImgIndex] = useState(0);
-  const [isHovered, setIsHovered] = useState(false);
 
   // الرابط المؤدي لصفحة تفاصيل المنتج (باستخدام الـ slug أو الـ _id)
   const productUrl = `/product/${product.slug || product._id}`;
-
-  useEffect(() => {
-    let interval;
-    if (isHovered && allImages.length > 1) {
-      interval = setInterval(() => {
-        setCurrentImgIndex((prevIndex) => (prevIndex + 1) % allImages.length);
-      }, 900);
-    }
-
-    return () => clearInterval(interval);
-  }, [isHovered, allImages.length]);
 
   // تصميم كارت السلايدر (المنتجات المميزة)
   if (variant === "slider") {
@@ -33,13 +21,11 @@ const ProductCard = ({ product, variant = "grid" }) => {
       <Link
         to={productUrl}
         onMouseEnter={() => {
-          setIsHovered(true);
           if (allImages.length > 1) {
             setCurrentImgIndex(1 % allImages.length);
           }
         }}
         onMouseLeave={() => {
-          setIsHovered(false);
           setCurrentImgIndex(0);
         }}
         className="min-w-[280px] sm:min-w-[320px] h-[220px] snap-center relative rounded-sm overflow-hidden shadow-sm flex-shrink-0 group cursor-pointer block"
@@ -47,6 +33,8 @@ const ProductCard = ({ product, variant = "grid" }) => {
         <img
           src={allImages[currentImgIndex]}
           alt={product.name}
+          loading="lazy"
+          decoding="async"
           className="w-full h-full object-cover transition-all duration-300 group-hover:scale-105"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none"></div>
@@ -84,13 +72,11 @@ const ProductCard = ({ product, variant = "grid" }) => {
   return (
     <div
       onMouseEnter={() => {
-        setIsHovered(true);
         if (allImages.length > 1) {
           setCurrentImgIndex(1 % allImages.length);
         }
       }}
       onMouseLeave={() => {
-        setIsHovered(false);
         setCurrentImgIndex(0);
       }}
       className="bg-white rounded-sm shadow-sm border border-[#EFE6DD] overflow-hidden hover:shadow-md transition duration-300 flex flex-col relative"
@@ -113,6 +99,8 @@ const ProductCard = ({ product, variant = "grid" }) => {
           <img
             src={allImages[currentImgIndex]}
             alt={product.name}
+            loading="lazy"
+            decoding="async"
             className="h-full w-full object-contain p-2 transition-all duration-300 hover:scale-105 sm:p-3"
           />
         </Link>
@@ -130,7 +118,6 @@ const ProductCard = ({ product, variant = "grid" }) => {
                 onClick={(event) => {
                   event.preventDefault();
                   event.stopPropagation();
-                  setIsHovered(false);
                   setCurrentImgIndex(idx);
                 }}
                 aria-label={`${t("Show image")} ${idx + 1}`}

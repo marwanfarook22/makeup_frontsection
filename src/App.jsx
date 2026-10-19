@@ -8,19 +8,19 @@ import {
 } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import Navbar from "./components/Navbar";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import Profile from "./pages/Profile";
-import ForgotPassword from "./pages/ForgotPassword";
-import Home from "./pages/Home";
-import ProductDetails from "./pages/ProudectDetails";
-import Cart from "./pages/Cart";
-import MyOrders from "./pages/MyOrders";
 import { CartProvider } from "./context/CartContext";
 import { LanguageProvider } from "./context/LanguageContext";
 import { useLanguage } from "./context/LanguageState";
 import { useAuthStore } from "./store/useAuthStore";
 
+const Login = lazy(() => import("./pages/Login"));
+const Register = lazy(() => import("./pages/Register"));
+const Profile = lazy(() => import("./pages/Profile"));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
+const Home = lazy(() => import("./pages/Home"));
+const ProductDetails = lazy(() => import("./pages/ProudectDetails"));
+const Cart = lazy(() => import("./pages/Cart"));
+const MyOrders = lazy(() => import("./pages/MyOrders"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 
 function RequireAuth({ children }) {
@@ -54,71 +54,71 @@ function App() {
           <Navbar />
 
           <main className="flex-grow container mx-auto p-2 sm:p-4">
-            <Routes>
-              <Route
-                path="/"
-                element={
-                  <RequireAuth>
-                    <Home />
-                  </RequireAuth>
-                }
-              />
-              <Route
-                path="/product/:idOrSlug"
-                element={
-                  <RequireAuth>
-                    <ProductDetails />
-                  </RequireAuth>
-                }
-              />
-              <Route
-                path="/cart"
-                element={
-                  <RequireAuth>
-                    <Cart />
-                  </RequireAuth>
-                }
-              />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route
-                path="/profile"
-                element={
-                  <RequireAuth>
-                    <Profile />
-                  </RequireAuth>
-                }
-              />
-              <Route
-                path="/orders"
-                element={
-                  <RequireAuth>
-                    <MyOrders />
-                  </RequireAuth>
-                }
-              />
-              <Route
-                path="/dashboard"
-                element={
-                  <RequireAuth>
-                    <Suspense
-                      fallback={
-                        <div className="py-20 text-center text-[#03382E]">
-                          جارٍ تحميل لوحة التحكم...
-                        </div>
-                      }
-                    >
+            <Suspense
+              fallback={
+                <div className="py-20 text-center text-[#03382E]">
+                  {language === "ar" ? "جارٍ تحميل الصفحة..." : "Loading page..."}
+                </div>
+              }
+            >
+              <Routes>
+                <Route
+                  path="/"
+                  element={
+                    <RequireAuth>
+                      <Home />
+                    </RequireAuth>
+                  }
+                />
+                <Route
+                  path="/product/:idOrSlug"
+                  element={
+                    <RequireAuth>
+                      <ProductDetails />
+                    </RequireAuth>
+                  }
+                />
+                <Route
+                  path="/cart"
+                  element={
+                    <RequireAuth>
+                      <Cart />
+                    </RequireAuth>
+                  }
+                />
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route
+                  path="/profile"
+                  element={
+                    <RequireAuth>
+                      <Profile />
+                    </RequireAuth>
+                  }
+                />
+                <Route
+                  path="/orders"
+                  element={
+                    <RequireAuth>
+                      <MyOrders />
+                    </RequireAuth>
+                  }
+                />
+                <Route
+                  path="/dashboard"
+                  element={
+                    <RequireAuth>
                       <Dashboard />
-                    </Suspense>
-                  </RequireAuth>
-                }
-              />
-              <Route path="/forgot-password" element={<ForgotPassword />} />
-              <Route
-                path="/reset-password/:token"
-                element={<Navigate to="/forgot-password" replace />}
-              />
-            </Routes>
+                    </RequireAuth>
+                  }
+                />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route
+                  path="/reset-password/:token"
+                  element={<Navigate to="/forgot-password" replace />}
+                />
+              </Routes>
+            </Suspense>
           </main>
           <Toaster position="top-center" reverseOrder={false} />
         </div>

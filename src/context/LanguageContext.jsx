@@ -113,6 +113,7 @@ const arabicTranslations = {
   "Your shopping cart is empty.": "سلة التسوق فارغة.",
   "Please adjust unavailable product quantities before confirming your order.": "يرجى تعديل كميات المنتجات غير المتوفرة قبل تأكيد الطلب.",
   "Please add a phone number to your account before confirming your order.": "يرجى إضافة رقم هاتف إلى حسابك قبل تأكيد الطلب.",
+  "This phone number is already registered to another account.": "رقم الهاتف مسجل بالفعل على حساب آخر.",
   "The server returned an incomplete response after creating the order.": "استُلم رد غير مكتمل من الخادم بعد إنشاء الطلب.",
   "Your order {number} was placed successfully.": "تم تسجيل طلبك رقم {number} بنجاح.",
   "Your order {number} was placed and sent to WhatsApp for confirmation.": "تم تسجيل طلبك رقم {number} وإرسال رسالة تأكيد تلقائية إليك عبر واتساب.",
